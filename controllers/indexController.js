@@ -6,7 +6,7 @@ const index = (req, res) => {
 };
 
 const home = (req, res) => {
-  res.render("home", { title: "Home", user: req.session.username });
+  res.render("home", { title: "Home", user: req.session.email });
 };
 
 const loginPage = (req, res) => {
@@ -17,17 +17,30 @@ const loginPage = (req, res) => {
 };
 
 const login = async (req, res, next) => {
-  const { username, password } = req.body;
+  const { email, password } = req.body;
 
   try {
-    const [rows] = await db.query("SELECT * FROM users WHERE username = ?", [
-      username,
+    // 🟢 Debug logs to see exactly what data is arriving from the frontend form
+    console.log("--- LOGIN ATTEMPT ---");
+    console.log("Form email value:", email);
+    console.log("Form password value:", password);
+
+    // Running the database fetch (Only one 'const [rows]' declaration here!)
+    const [rows] = await db.query("SELECT * FROM users WHERE email = ?", [
+      email,
     ]);
 
+    console.log("Database rows found count:", rows.length);
+    if (rows.length > 0) {
+      console.log("Database password hash:", rows[0].password);
+    }
+    console.log("----------------------");
+
+    // Check if user exists
     if (rows.length === 0) {
       return res.render("login", {
         title: "Login",
-        error: "Invalid username or password",
+        error: "Invalid email or password",
       });
     }
 
@@ -37,13 +50,22 @@ const login = async (req, res, next) => {
     if (!isMatch) {
       return res.render("login", {
         title: "Login",
-        error: "Invalid username or password",
+        error: "Invalid email or password",
       });
     }
 
-    // Set session
+    // Set session core identifiers
     req.session.userId = user.id;
-    req.session.username = user.username;
+    req.session.email = user.email;
+
+    // Set contextual, inactivity-based session lifetimes
+    if (user.email === 'admin@unand.ac.id') {
+      req.session.cookie.maxAge = 1000 * 60 * 60 * 2; // Admin gets 2 hours
+    } else if (user.email.includes('dekan') || user.email.includes('wd')) {
+      req.session.cookie.maxAge = 1000 * 60 * 15;     // Wakil Dekan II gets 15 mins
+    } else {
+      req.session.cookie.maxAge = 1000 * 60 * 60 * 1; // Students get 1 hour
+    }
 
     res.redirect("/home");
   } catch (err) {

@@ -8,6 +8,8 @@ var MySQLStore = require('express-mysql-session')(session);
 
 var indexRouter = require('./routes/index');
 var usersRouter = require('./routes/users');
+const dashboardRouter = require('./routes/dashboard');
+
 const { notFoundHandler, errorHandler } = require('./middlewares/error');
 
 var app = express();
@@ -28,21 +30,33 @@ const sessionStore = new MySQLStore({
   user: process.env.DB_USER,
   password: process.env.DB_PASSWORD,
   database: process.env.DB_NAME,
+
+  clearExpired: false,
+  checkExpirationInterval: 0, 
+  schema: {
+    tableName: 'sessions',
+    columnNames: {
+      session_id: 'id',
+      expires: 'last_activity',
+      data: 'payload'
+    }
+  }
 });
 
 app.use(session({
   key: 'session_cookie_name',
   secret: process.env.SESSION_SECRET || 'secret',
   store: sessionStore,
-  resave: false,
+  resave: true,
   saveUninitialized: false,
   cookie: {
-    maxAge: 1000 * 60 * 60 * 24 // 1 day
+    // maxAge: 1000 * 60 * 60 * 24 // 1 day
   }
 }));
 
 app.use('/', indexRouter);
 app.use('/users', usersRouter);
+app.use('/', dashboardRouter);
 
 // catch 404 and forward to error handler
 app.use(notFoundHandler);
