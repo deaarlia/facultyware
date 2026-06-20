@@ -8,7 +8,10 @@ var MySQLStore = require('express-mysql-session')(session);
 
 var indexRouter = require('./routes/index');
 var usersRouter = require('./routes/users');
-const dashboardRouter = require('./routes/dashboard');
+// const dashboardRouter = require('./routes/dashboard');
+// [BARU] Import routes mahasiswa dan wd2
+const mahasiswaRoutes = require('./routes/mahasiswaRoutes');
+const wd2Routes = require('./routes/wd2Routes');
 
 const { notFoundHandler, errorHandler } = require('./middlewares/error');
 
@@ -23,6 +26,7 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 app.use(cookieParser());
 app.use(express.static(path.join(__dirname, 'public')));
+app.use('/api/wd2', wd2Routes);
 
 // Session configuration
 const sessionStore = new MySQLStore({
@@ -43,6 +47,7 @@ const sessionStore = new MySQLStore({
   }
 });
 
+// Middleware Session diletakkan di sini (di atas pendaftaran semua route)
 app.use(session({
   key: 'session_cookie_name',
   secret: process.env.SESSION_SECRET || 'secret',
@@ -54,9 +59,15 @@ app.use(session({
   }
 }));
 
+// [BARU & DIPINDAH] Registrasi API Endpoint untuk Mahasiswa dan Wakil Dekan 2
+// Dipastikan berada di bawah middleware session agar bisa membaca req.session mahasiswa/dosen yang login
+app.use('/api/mahasiswa', mahasiswaRoutes);
+app.use('/api/wd2', wd2Routes);
+
+// Base Web Routes
 app.use('/', indexRouter);
 app.use('/users', usersRouter);
-app.use('/', dashboardRouter);
+// app.use('/', dashboardRouter);
 
 // catch 404 and forward to error handler
 app.use(notFoundHandler);
