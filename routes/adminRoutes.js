@@ -3,7 +3,7 @@ const router  = express.Router();
 const { isAuthenticated } = require('../middlewares/auth');
 
 const dashboardCtrl  = require('../controllers/admin/dashboardController');
-const periodeCtrl    = require('../controllers/admin/periodeController');
+const periodeCtrl     = require('../controllers/admin/periodeController');
 const permohonanCtrl = require('../controllers/admin/permohonanController');
 const exportCtrl     = require('../controllers/admin/exportController');
 

@@ -2,7 +2,6 @@ const db = require('../../lib/db');
 
 const sidebarData = (req) => ({ user: req.session.email || '-' });
 
-// Status 0=Pending, 1=Disetujui, 2=Ditolak, 3=Revisi
 const STATUS_LABELS = { 0: 'Menunggu', 1: 'Disetujui', 2: 'Ditolak', 3: 'Butuh Revisi' };
 
 exports.getDaftarPermohonan = async (req, res, next) => {
@@ -33,6 +32,7 @@ exports.getDaftarPermohonan = async (req, res, next) => {
              FROM student_requests sr
              JOIN student_request_refund srr ON sr.id = srr.student_request_id
              JOIN students s ON sr.requested_by = s.id
+             LEFT JOIN organization_units ou ON s.department_id = ou.id
              ${where}`,
             params
         );
@@ -40,10 +40,12 @@ exports.getDaftarPermohonan = async (req, res, next) => {
         const [permohonan] = await db.query(
             `SELECT sr.id, s.name AS nama_mahasiswa, s.regno AS nim,
                     srr.refund_type, srr.refund_nominal, sr.requested_at,
-                    sr.status AS status_code
+                    sr.status AS status_code,
+                    ou.name AS nama_departemen
              FROM student_requests sr
              JOIN student_request_refund srr ON sr.id = srr.student_request_id
              JOIN students s ON sr.requested_by = s.id
+             LEFT JOIN organization_units ou ON s.department_id = ou.id
              ${where}
              ORDER BY sr.requested_at DESC
              LIMIT ? OFFSET ?`,
@@ -68,13 +70,16 @@ exports.getDetailPermohonan = async (req, res, next) => {
 
         const [[permohonan]] = await db.query(
             `SELECT sr.id, sr.request_nunmber AS request_number, sr.status, sr.requested_at,
+                    srr.id AS refund_id,
                     srr.refund_type, srr.refund_nominal, srr.reason,
                     srr.application_letter_file, srr.ukt_payment_receipt_file,
                     srr.rector_decree_file, srr.saving_book_fiel,
-                    s.name AS nama_mahasiswa, s.regno AS nim, s.department_id
+                    s.name AS nama_mahasiswa, s.regno AS nim, s.department_id,
+                    ou.name AS nama_departemen
              FROM student_requests sr
              JOIN student_request_refund srr ON sr.id = srr.student_request_id
              JOIN students s ON sr.requested_by = s.id
+             LEFT JOIN organization_units ou ON s.department_id = ou.id
              WHERE sr.id = ? AND srr.refund_type = 'UKT'`,
             [id]
         );
@@ -90,15 +95,15 @@ exports.getDetailPermohonan = async (req, res, next) => {
             `SELECT * FROM student_request_refund_approvals
              WHERE student_request_refund_id = ?
              ORDER BY id ASC`,
-            [id]
+            [permohonan.refund_id]
         );
 
-        // Admin (level 1) dan WD2 (level 2)
         const adminApproval = approvals.find(a => a.level === 1) || null;
         const wd2HasActed   = approvals.some(a => a.level === 2);
 
         res.render('admin/detail-permohonan', {
             ...sidebarData(req),
+            title: 'Detail Permohonan #' + id,
             permohonan,
             approvals,
             adminApproval,
@@ -113,7 +118,6 @@ exports.verifikasiPermohonan = async (req, res) => {
     const { id } = req.params;
     const { status_verifikasi, catatan } = req.body;
 
-    // 1=Setujui, 2=Tolak, 3=Revisi
     const validStatuses = ['1', '2', '3'];
     if (!validStatuses.includes(String(status_verifikasi))) {
         return res.status(400).json({
@@ -134,12 +138,39 @@ exports.verifikasiPermohonan = async (req, res) => {
             return res.status(404).json({ success: false, message: 'Permohonan tidak ditemukan.' });
         }
 
-        await db.query(
-            `INSERT INTO student_request_refund_approvals
-             (student_request_refund_id, approved_by, approval_reason, approval_position, status, level)
-             VALUES (?, ?, ?, 'Admin Akademik', ?, 1)`,
-            [id, req.session.userId || null, catatan?.trim() || null, statusNum]
+        const [[refund]] = await db.query(
+            `SELECT srr.id FROM student_request_refund srr WHERE srr.student_request_id = ?`,
+            [id]
         );
+
+        if (!refund) {
+            return res.status(404).json({ success: false, message: 'Data refund tidak ditemukan.' });
+        }
+
+        const [[existing]] = await db.query(
+            `SELECT id FROM student_request_refund_approvals WHERE student_request_refund_id = ? AND level = 1`,
+            [refund.id]
+        );
+
+        if (existing) {
+            await db.query(
+                `UPDATE student_request_refund_approvals
+                 SET status = ?, approval_reason = ?, updated_at = NOW()
+                 WHERE id = ?`,
+                [statusNum, catatan?.trim() || null, existing.id]
+            );
+        } else {
+            const [[{ maxId }]] = await db.query(
+                'SELECT COALESCE(MAX(id), 0) + 1 AS maxId FROM student_request_refund_approvals'
+            );
+
+            await db.query(
+                `INSERT INTO student_request_refund_approvals
+                (id, student_request_refund_id, approved_by, approval_reason, approval_position, status, level)
+                VALUES (?, ?, ?, ?, 'Admin Akademik', ?, 1)`,
+                [maxId, refund.id, req.session.userId || null, catatan?.trim() || null, statusNum]
+            );
+        }
 
         res.json({
             success: true,
@@ -165,10 +196,17 @@ exports.batalkanVerifikasi = async (req, res) => {
             });
         }
 
-        await db.query(
-            'DELETE FROM student_request_refund_approvals WHERE student_request_refund_id = ? AND level = 1',
+        const [[refund]] = await db.query(
+            `SELECT srr.id FROM student_request_refund srr WHERE srr.student_request_id = ?`,
             [id]
         );
+
+        if (refund) {
+            await db.query(
+                'DELETE FROM student_request_refund_approvals WHERE student_request_refund_id = ? AND level = 1',
+                [refund.id]
+            );
+        }
 
         res.json({ success: true, message: 'Verifikasi Admin berhasil dibatalkan.' });
     } catch (err) {

@@ -1,57 +1,66 @@
+require('dotenv').config();
 const express = require('express');
 const path = require('path');
-const cookieParser = require('cookie-parser');
 const logger = require('morgan');
-const cors = require('cors'); // Library untuk mengatasi isu CORS
+const cors = require('cors');
+const session = require('express-session');
+const MySQLStore = require('express-mysql-session')(session);
 
-// Import Router bawaan proyek Anda
 const indexRouter = require('./routes/index');
 const usersRouter = require('./routes/users');
-const mahasiswaRouter = require('./routes/mahasiswaRoutes'); // Router khusus mahasiswa yang kita buat
+const mahasiswaRoutes = require('./routes/mahasiswaRoutes');
+const wd2Routes = require('./routes/wd2Routes');
+const adminRoutes = require('./routes/adminRoutes');
+
+const verifApiCtrl = require('./controllers/api/verifApiController');
+const { notFoundHandler, errorHandler } = require('./middlewares/error');
 
 const app = express();
 
-// ==========================================
-// 1. MIDDLEWARE UTAMA (Wajib paling atas)
-// ==========================================
-app.use(cors({ origin: '*' })); // Membuka akses untuk semua port frontend (Live Server)
+app.set('views', path.join(__dirname, 'views'));
+app.set('view engine', 'ejs');
+
+app.use(cors({ origin: '*' }));
 app.use(logger('dev'));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
-app.use(cookieParser());
-
-// Menyediakan akses folder public dan upload file fisik
 app.use(express.static(path.join(__dirname, 'public')));
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
-// ==========================================
-// 2. REGISTRASI ROUTER / ENDPOINT
-// ==========================================
+const sessionStore = new MySQLStore({
+  host: process.env.DB_HOST,
+  user: process.env.DB_USER,
+  password: process.env.DB_PASSWORD,
+  database: process.env.DB_NAME,
+  clearExpired: false,
+  checkExpirationInterval: 0,
+  schema: {
+    tableName: 'sessions',
+    columnNames: {
+      session_id: 'id',
+      expires: 'last_activity',
+      data: 'payload'
+    }
+  }
+});
+
+app.use(session({
+  key: 'session_cookie_name',
+  secret: process.env.SESSION_SECRET || 'secret',
+  store: sessionStore,
+  resave: true,
+  saveUninitialized: false,
+}));
+
+app.use('/api/mahasiswa', mahasiswaRoutes);
+app.use('/api/wd2', wd2Routes);
+app.get('/api/admin/verifikasi-tahap1', verifApiCtrl.getVerifikasiTahap1JSON);
+
+app.use('/', adminRoutes);
 app.use('/', indexRouter);
 app.use('/users', usersRouter);
 
-// Prefix global untuk mahasiswa. 
-// Jalur di dalam routes/mahasiswa.js otomatis akan diawali dengan /api/mahasiswa
-app.use('/api/mahasiswa', mahasiswaRouter);
+app.use(notFoundHandler);
+app.use(errorHandler);
 
-// ==========================================
-// 3. ERROR HANDLING (FALLBACK)
-// ==========================================
-// Menangkap request yang nyasar atau salah ketik URL
-app.use((req, res, next) => {
-    res.status(404).json({
-        success: false,
-        message: "Endpoint tidak ditemukan. Periksa kembali method (GET/POST) atau URL Anda."
-    });
-});
-
-// Menangkap error internal server
-app.use((err, req, res, next) => {
-    console.error("Error pada Server:", err.stack);
-    res.status(err.status || 500).json({
-        success: false,
-        message: err.message || "Terjadi kesalahan internal pada server backend."
-    });
-});
-
-module.exports = app; // Diekspor agar bisa dieksekusi oleh bin/www
+module.exports = app;
