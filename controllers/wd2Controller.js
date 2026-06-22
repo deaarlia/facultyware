@@ -1,14 +1,5 @@
 
-const mysql = require('mysql2/promise');
-const db = mysql.createPool({
-  host: 'localhost',
-  user: 'root',          
-  password: '',          
-  database: 'facultyware', 
-  waitForConnections: true,
-  connectionLimit: 10,
-  queueLimit: 0
-});
+const db = require('../lib/db');
 
 // 1. GET: Semua permohonan masuk langsung ke WD 2 (Bypass Admin untuk Testing)
 const getDaftarPermohonan = async (req, res) => {
