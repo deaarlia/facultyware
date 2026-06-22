@@ -1,31 +1,31 @@
 require('dotenv').config();
-var express = require('express');
-var path = require('path');
-var cookieParser = require('cookie-parser');
-var logger = require('morgan');
-var session = require('express-session');
-var MySQLStore = require('express-mysql-session')(session);
+const express = require('express');
+const path = require('path');
+const logger = require('morgan');
+const cors = require('cors');
+const session = require('express-session');
+const MySQLStore = require('express-mysql-session')(session);
 
-var indexRouter = require('./routes/index');
-var usersRouter = require('./routes/users');
+const indexRouter = require('./routes/index');
+const usersRouter = require('./routes/users');
 const mahasiswaRoutes = require('./routes/mahasiswaRoutes');
 const wd2Routes = require('./routes/wd2Routes');
 const adminRoutes = require('./routes/adminRoutes');
 
-const { isAuthenticated } = require('./middlewares/auth');
 const verifApiCtrl = require('./controllers/api/verifApiController');
 const { notFoundHandler, errorHandler } = require('./middlewares/error');
 
-var app = express();
+const app = express();
 
 app.set('views', path.join(__dirname, 'views'));
 app.set('view engine', 'ejs');
 
+app.use(cors({ origin: '*' }));
 app.use(logger('dev'));
 app.use(express.json());
-app.use(express.urlencoded({ extended: false }));
-app.use(cookieParser());
+app.use(express.urlencoded({ extended: true }));
 app.use(express.static(path.join(__dirname, 'public')));
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
 const sessionStore = new MySQLStore({
   host: process.env.DB_HOST,
@@ -33,7 +33,7 @@ const sessionStore = new MySQLStore({
   password: process.env.DB_PASSWORD,
   database: process.env.DB_NAME,
   clearExpired: false,
-  checkExpirationInterval: 0, 
+  checkExpirationInterval: 0,
   schema: {
     tableName: 'sessions',
     columnNames: {
@@ -50,7 +50,6 @@ app.use(session({
   store: sessionStore,
   resave: true,
   saveUninitialized: false,
-  cookie: {}
 }));
 
 app.use('/api/mahasiswa', mahasiswaRoutes);

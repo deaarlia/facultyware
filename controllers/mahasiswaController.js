@@ -1,71 +1,131 @@
 const db = require('../lib/db');
+const multer = require('multer');
+const path = require('path');
 
+// 1. KONFIGURASI PENYIMPANAN FILE FISIK (MULTER)
+const storage = multer.diskStorage({
+    destination: function (req, file, cb) {
+        cb(null, 'public/uploads/');
+    },
+    filename: function (req, file, cb) {
+        const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+        
+        let prefix = 'file';
+        if (file.fieldname === 'application_letter_file') prefix = 'surat';
+        else if (file.fieldname === 'ukt_payment_receipt_file') prefix = 'ukt';
+        else if (file.fieldname === 'rector_decree_file') prefix = 'sk';
+
+        cb(null, prefix + '-' + uniqueSuffix + path.extname(file.originalname));
+    }
+});
+
+exports.uploadFields = multer({ storage: storage }).fields([
+    { name: 'application_letter_file', maxCount: 1 },
+    { name: 'ukt_payment_receipt_file', maxCount: 1 },
+    { name: 'rector_decree_file', maxCount: 1 }
+]);
 
 exports.ajukanPengembalian = async (req, res) => {
     try {
-        const { 
-            student_id, 
-            refund_type, 
-            refund_nominal, 
-            reason, 
-            application_letter_file, 
-            ukt_payment_receipt_file,
-            rector_decree_file
-        } = req.body;
+        const { nama, nim, departemen, whatsapp } = req.body;
 
-       
-        if (!student_id || !refund_type || !refund_nominal || !application_letter_file || !ukt_payment_receipt_file) {
+        const appLetter = req.files && req.files['application_letter_file'] ? req.files['application_letter_file'][0].filename : null;
+        const uktReceipt = req.files && req.files['ukt_payment_receipt_file'] ? req.files['ukt_payment_receipt_file'][0].filename : null;
+        const rectorDecree = req.files && req.files['rector_decree_file'] ? req.files['rector_decree_file'][0].filename : null;
+
+        console.log("Data Masuk:", { nama, nim, departemen, whatsapp, appLetter, uktReceipt, rectorDecree });
+
+        if (!nama || !nim || !departemen || !whatsapp || !appLetter || !uktReceipt || !rectorDecree) {
             return res.status(400).json({
                 success: false,
-                message: "Mohon lengkapi data dan unggah berkas wajib."
+                message: "Mohon lengkapi seluruh data formulir dan pastikan ketiga berkas PDF wajib telah terunggah."
             });
         }
 
-       
+        let dep_id = 1;
+        if (departemen === 'SISTEM INFORMASI') dep_id = 2;
+        else if (departemen === 'INFORMATIKA') dep_id = 3;
+
+        // ========================================================
+        // PROSES 1: Validasi & Pembuatan ID Manual untuk Tabel 'students'
+        // ========================================================
+        const [checkMhs] = await db.execute('SELECT id FROM students WHERE regno = ?', [nim]);
+        let finalStudentId;
+
+        if (checkMhs.length > 0) {
+            finalStudentId = checkMhs[0].id;
+            await db.execute(
+                'UPDATE students SET name = ?, department_id = ?, phone_no = ? WHERE id = ?',
+                [nama, dep_id, whatsapp, finalStudentId]
+            );
+        } else {
+            // JIKA AKUN BARU: Cari ID tertinggi secara manual di tabel 'students'
+            const [maxMhsRow] = await db.execute('SELECT MAX(id) AS maxId FROM students');
+            finalStudentId = (maxMhsRow[0].maxId || 0) + 1;
+
+            // Masukkan ID manual ke dalam perintah INSERT
+            await db.execute(
+                'INSERT INTO students (id, name, regno, department_id, phone_no) VALUES (?, ?, ?, ?, ?)',
+                [finalStudentId, nama, nim, dep_id, whatsapp]
+            );
+        }
+
+        // ========================================================
+        // PROSES 2: Pembuatan ID Manual untuk Tabel 'student_request_refund'
+        // ========================================================
+        const [maxRefundRow] = await db.execute('SELECT MAX(id) AS maxId FROM student_request_refund');
+        const finalRefundId = (maxRefundRow[0].maxId || 0) + 1;
+
+        // Memasukkan kolom 'id' secara eksplisit agar MySQL tidak otomatis mengisinya dengan angka 0
         const query = `
             INSERT INTO student_request_refund (
-                student_request_id, refund_type, refund_nominal, reason, 
+                id, student_request_id, refund_type, refund_nominal, reason, 
                 application_letter_file, ukt_payment_receipt_file, rector_decree_file
-            ) VALUES (?, ?, ?, ?, ?, ?, ?)
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
         `;
 
-        const [result] = await db.execute(query, [
-            student_id, refund_type, refund_nominal, reason || '', 
-            application_letter_file, ukt_payment_receipt_file, rector_decree_file || null
+        const defaultRefundType = "Pengajuan Pengembalian UKT";
+        const defaultNominal = 0;
+        const defaultReason = "Pengajuan melalui sistem form";
+
+        await db.execute(query, [
+            finalRefundId,   // ID Baru yang unik hasil dari MAX(id) + 1
+            finalStudentId,  
+            defaultRefundType, 
+            defaultNominal, 
+            defaultReason, 
+            appLetter,      
+            uktReceipt,      
+            rectorDecree
         ]);
 
         res.status(201).json({
             success: true,
-            message: "Permohonan pengembalian UKT berhasil diajukan. Menunggu verifikasi Admin.",
-            data: { id_pengajuan: result.insertId, status: "Menunggu Validasi Admin (Pending)" }
+            message: "Permohonan berhasil diajukan! Berkas fisik Anda telah aman tersimpan.",
+            data: { id_pengajuan: finalRefundId }
         });
     } catch (error) {
+        console.error("Error backend:", error);
         res.status(500).json({ success: false, message: error.message });
     }
 };
 
-
-
 exports.ubahPengajuan = async (req, res) => {
     try {
         const { id } = req.params; 
-        const { 
-            refund_type, refund_nominal, reason, 
-            application_letter_file, ukt_payment_receipt_file, 
-            rector_decree_file, saving_book_file 
-        } = req.body;
+        const { nama, nim, departemen, whatsapp, student_id } = req.body;
 
-       
+        const appLetter = req.files && req.files['application_letter_file'] ? req.files['application_letter_file'][0].filename : null;
+        const uktReceipt = req.files && req.files['ukt_payment_receipt_file'] ? req.files['ukt_payment_receipt_file'][0].filename : null;
+        const rectorDecree = req.files && req.files['rector_decree_file'] ? req.files['rector_decree_file'][0].filename : null;
+
         const [approvals] = await db.execute(
             'SELECT status FROM student_request_refund_approvals WHERE student_request_refund_id = ? ORDER BY id DESC LIMIT 1', 
             [id]
         );
         
-       
         if (approvals.length > 0) {
             const statusTerakhir = approvals[0].status;
-            
-            
             if (statusTerakhir !== 4) {
                 return res.status(400).json({
                     success: false,
@@ -74,20 +134,28 @@ exports.ubahPengajuan = async (req, res) => {
             }
         }
 
+        if (student_id) {
+            let dep_id = 1;
+            if (departemen === 'SISTEM INFORMASI') dep_id = 2;
+            else if (departemen === 'INFORMATIKA') dep_id = 3;
+            
+            await db.execute(
+                'UPDATE students SET name = ?, regno = ?, department_id = ?, phone_no = ? WHERE id = ?',
+                [nama, nim, dep_id, whatsapp, student_id]
+            );
+        }
+
+        let updateQuery = `UPDATE student_request_refund SET reason = ?`;
+        let queryParams = ["Update data melalui sistem"];
+
+        if (appLetter) { updateQuery += `, application_letter_file = ?`; queryParams.push(appLetter); }
+        if (uktReceipt) { updateQuery += `, ukt_payment_receipt_file = ?`; queryParams.push(uktReceipt); }
+        if (rectorDecree) { updateQuery += `, rector_decree_file = ?`; queryParams.push(rectorDecree); }
+
+        updateQuery += ` WHERE id = ?`;
+        queryParams.push(id);
         
-        const updateQuery = `
-            UPDATE student_request_refund 
-            SET refund_type = ?, refund_nominal = ?, reason = ?, 
-                application_letter_file = ?, ukt_payment_receipt_file = ?, 
-                rector_decree_file = ?, saving_book_fiel = ?
-            WHERE id = ?
-        `;
-        
-        await db.execute(updateQuery, [
-            refund_type, refund_nominal, reason, 
-            application_letter_file, ukt_payment_receipt_file, 
-            rector_decree_file || null, saving_book_file || null, id
-        ]);
+        await db.execute(updateQuery, queryParams);
 
         res.status(200).json({ success: true, message: "Data permohonan berhasil diperbarui." });
     } catch (error) {
@@ -99,27 +167,36 @@ exports.lihatStatusPengajuan = async (req, res) => {
     try {
         const { student_id } = req.query;
 
-        if (!student_id) {
-            return res.status(400).json({ success: false, message: "Parameter student_id diperlukan." });
-        }
-
-        const query = `
+        let query = `
             SELECT 
                 srr.id AS id_pengajuan,
                 srr.refund_type,
                 srr.refund_nominal,
-                srr.reason AS alasan_mahasiswa,
+                srr.application_letter_file,
+                srr.ukt_payment_receipt_file,
+                srr.rector_decree_file,
                 srr.created_at AS tanggal_pengajuan,
                 srra.status AS status_code,
                 srra.approval_position AS posisi_validator,
-                srra.approval_reason AS catatan_validator
+                srra.approval_reason AS catatan_validator,
+                st.name AS student_name,
+                st.regno AS student_nim,
+                st.department_id,
+                st.phone_no AS student_phone
             FROM student_request_refund srr
             LEFT JOIN student_request_refund_approvals srra ON srr.id = srra.student_request_refund_id
-            WHERE srr.student_request_id = ?
-            ORDER BY srr.created_at DESC, srra.id DESC
+            LEFT JOIN students st ON srr.student_request_id = st.id
         `;
         
-        const [rows] = await db.execute(query, [student_id]);
+        let queryParams = [];
+        if (student_id) {
+            query += ` WHERE srr.student_request_id = ?`;
+            queryParams.push(student_id);
+        }
+        
+        query += ` ORDER BY srr.created_at DESC, srra.id DESC`;
+        
+        const [rows] = await db.execute(query, queryParams);
 
         const riwayatDenganStatusText = rows.map(item => {
             let statusText = "Menunggu Validasi Admin";
@@ -128,11 +205,21 @@ exports.lihatStatusPengajuan = async (req, res) => {
             if (item.status_code === 3) statusText = "Ditolak oleh Wakil Dekan 2";
             if (item.status_code === 4) statusText = "Butuh Revisi Berkas";
 
+            let deptString = "TEKNIK KOMPUTER";
+            if (item.department_id === 2) deptString = "SISTEM INFORMASI";
+            if (item.department_id === 3) deptString = "INFORMATIKA";
+
             return {
                 id_pengajuan: item.id_pengajuan,
+                nama: item.student_name || "-",
+                nim: item.student_nim || "-",
+                departemen: item.department_id ? deptString : "-",
+                no_hp: item.student_phone || "-",
+                file_surat: item.application_letter_file ? `/uploads/${item.application_letter_file}` : null,
+                file_ukt: item.ukt_payment_receipt_file ? `/uploads/${item.ukt_payment_receipt_file}` : null,
+                file_sk: item.rector_decree_file ? `/uploads/${item.rector_decree_file}` : null,
                 refund_type: item.refund_type,
                 refund_nominal: item.refund_nominal,
-                alasan_mahasiswa: item.alasan_mahasiswa,
                 tanggal_pengajuan: item.tanggal_pengajuan,
                 status_sistem: statusText,
                 catatan_petugas: item.catatan_validator || "-"
@@ -141,6 +228,7 @@ exports.lihatStatusPengajuan = async (req, res) => {
 
         res.status(200).json({ success: true, data: riwayatDenganStatusText });
     } catch (error) {
+        console.error("Error Get Riwayat:", error);
         res.status(500).json({ success: false, message: error.message });
     }
 };

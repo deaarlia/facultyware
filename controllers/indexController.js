@@ -11,6 +11,8 @@
 
   const loginPage = (req, res) => {
     if (req.session.userId) {
+      const roles = req.session.roles || [];
+      if (roles.includes('admin')) return res.redirect("/dashboard");
       return res.redirect("/home");
     }
     res.render("login", { title: "Login", error: null });

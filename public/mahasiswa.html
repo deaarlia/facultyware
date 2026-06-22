@@ -1,0 +1,423 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pengajuan Pengembalian UKT - Mahasiswa</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            background-color: #f8fafc;
+            color: #1e293b;
+        }
+        .navbar {
+            background-color: #ffffff;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+        }
+        .card {
+            border: none;
+            border-radius: 12px;
+            box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1), 0 4px 6px -2px rgba(0,0,0,0.05);
+        }
+        .form-label {
+            font-weight: 600;
+            font-size: 0.9rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: #475569;
+        }
+        
+        .file-upload-box {
+            border: 1px solid #cbd5e1;
+            border-radius: 8px;
+            padding: 12px 16px;
+            margin-bottom: 12px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background-color: #ffffff;
+        }
+        .file-info {
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+        }
+        .doc-title {
+            font-weight: 600;
+            font-size: 14px;
+        }
+        .doc-status {
+            font-size: 12px;
+            color: #94a3b8;
+            font-style: italic;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            max-width: 250px;
+        }
+        .btn-upload {
+            background-color: #eff6ff;
+            color: #2563eb;
+            border: 1px solid #bfdbfe;
+            padding: 8px 16px;
+            border-radius: 6px;
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            margin: 0;
+        }
+        .btn-upload:hover {
+            background-color: #2563eb;
+            color: white;
+        }
+        .btn-upload input[type="file"] {
+            display: none;
+        }
+
+        .btn-floating {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            z-index: 1050;
+            border-radius: 50px;
+            padding: 12px 24px;
+            box-shadow: 0 10px 15px -3px rgba(37, 99, 235, 0.4);
+            font-weight: 600;
+            letter-spacing: 0.5px;
+            transition: transform 0.2s ease-in-out;
+        }
+        .btn-floating:hover {
+            transform: translateY(-3px);
+        }
+        .table th {
+            font-weight: 600;
+            background-color: #f1f5f9;
+            color: #475569;
+            position: sticky;
+            top: 0;
+            z-index: 1;
+        }
+        .badge-status {
+            font-weight: 500;
+            padding: 0.5em 1em;
+            border-radius: 50px;
+        }
+        .custom-scroll::-webkit-scrollbar { width: 8px; height: 8px; }
+        .custom-scroll::-webkit-scrollbar-track { background: #f1f5f9; border-radius: 4px; }
+        .custom-scroll::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+        .custom-scroll::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+    </style>
+</head>
+<body>
+
+    <nav class="navbar navbar-expand-lg navbar-light py-3">
+        <div class="container-fluid px-4">
+            <a class="navbar-brand fw-bold text-primary" href="#">Sistem UKT Mahasiswa</a>
+            <span class="navbar-text fw-medium">Portal Pengajuan</span>
+        </div>
+    </nav>
+
+    <div class="container my-4">
+        <div class="row justify-content-center">
+            <div class="col-lg-7 col-md-10">
+                <div class="card p-5">
+                    <h4 class="fw-bold mb-4 text-center text-dark">Formulir Pengajuan Pengembalian UKT</h4>
+                    <p class="text-center text-muted mb-4 small">Silakan lengkapi data di bawah ini dengan benar untuk memproses pengajuan Anda.</p>
+                    
+                    <form id="formPengajuan">
+                        
+                        <div class="mb-4 p-3 rounded" style="background-color: #fff7ed; border: 1px solid #ffedd5;">
+                            <label class="form-label text-warning-emphasis" style="color: #c2410c;">🛠️ SIMULASI ID MAHASISWA AKTIF</label>
+                            <input type="number" class="form-control py-2 fw-bold text-primary" id="student_id" placeholder="Contoh: 14, 15, 16" required>
+                            <small class="text-muted d-block mt-1" style="font-size: 0.75rem;">Ganti angka ini untuk mengetes riwayat & kirim data sebagai mahasiswa yang berbeda.</small>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label class="form-label">1. Nama Lengkap Mahasiswa/i <span class="text-danger">*</span></label>
+                            <input type="text" class="form-control py-2" id="nama" name="nama" placeholder="Masukkan nama lengkap Anda" required>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">2. Nomor Induk Mahasiswa/i (NIM) <span class="text-danger">*</span></label>
+                            <input type="text" class="form-control py-2" id="nim" name="nim" placeholder="Masukkan NIM Anda" required>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">3. Departemen <span class="text-danger">*</span></label>
+                            <div class="d-flex gap-4 mt-2">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="radio" name="departemen" id="dep1" value="TEKNIK KOMPUTER" required>
+                                    <label class="form-check-label" for="dep1">TEKNIK KOMPUTER</label>
+                                </div>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="radio" name="departemen" id="dep2" value="SISTEM INFORMASI">
+                                    <label class="form-check-label" for="dep2">SISTEM INFORMASI</label>
+                                </div>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="radio" name="departemen" id="dep3" value="INFORMATIKA">
+                                    <label class="form-check-label" for="dep3">INFORMATIKA</label>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="mb-3 mt-4 bg-light p-3 rounded">
+                            <label class="form-label mb-3">4. UPLOAD BERKAS (FILE PDF) <span class="text-danger">*</span></label>
+                            <p class="text-muted small mb-3">Batas jumlah file: 1 per slot. Batas ukuran satu file: 10MB.</p>
+
+                            <div class="file-upload-box">
+                                <div class="file-info">
+                                    <span class="doc-title">Surat Permohonan (Application Letter)</span>
+                                    <span class="doc-status" id="status-app-letter">Belum ada berkas terpilih</span>
+                                </div>
+                                <label class="btn-upload">
+                                    + Unggah file
+                                    <input type="file" id="file_app_letter" name="application_letter_file" accept=".pdf" required onchange="updateFileName(this, 'status-app-letter')">
+                                </label>
+                            </div>
+
+                            <div class="file-upload-box">
+                                <div class="file-info">
+                                    <span class="doc-title">Bukti Pembayaran UKT</span>
+                                    <span class="doc-status" id="status-ukt-receipt">Belum ada berkas terpilih</span>
+                                </div>
+                                <label class="btn-upload">
+                                    + Unggah file
+                                    <input type="file" id="file_ukt_receipt" name="ukt_payment_receipt_file" accept=".pdf" required onchange="updateFileName(this, 'status-ukt-receipt')">
+                                </label>
+                            </div>
+
+                            <div class="file-upload-box">
+                                <div class="file-info">
+                                    <span class="doc-title">SK Rektor / Berkas Pendukung</span>
+                                    <span class="doc-status" id="status-rector-decree">Belum ada berkas terpilih</span>
+                                </div>
+                                <label class="btn-upload">
+                                    + Unggah file
+                                    <input type="file" id="file_rector_decree" name="rector_decree_file" accept=".pdf" required onchange="updateFileName(this, 'status-rector-decree')">
+                                </label>
+                            </div>
+                        </div>
+
+                        <div class="mb-4">
+                            <label class="form-label">5. No. Handphone / WhatsApp Aktif <span class="text-danger">*</span></label>
+                            <input type="text" class="form-control py-2" id="whatsapp" name="whatsapp" placeholder="Contoh: 08123456789" required>
+                        </div>
+
+                        <button type="submit" class="btn btn-primary w-100 py-3 mt-2 fw-bold" id="btnSubmit" style="font-size: 1.1rem; border-radius: 8px;">
+                            🚀 Kirim Permohonan
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <button class="btn btn-primary btn-floating" data-bs-toggle="modal" data-bs-target="#modalRiwayat">
+        🕒 Riwayat Pengajuan
+    </button>
+
+    <div class="modal fade" id="modalRiwayat" tabindex="-1" aria-labelledby="modalRiwayatLabel" aria-hidden="true">
+        <div class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable">
+            <div class="modal-content border-0 shadow-lg" style="border-radius: 16px;">
+                <div class="modal-header bg-white border-bottom-0 pt-4 px-4 pb-2">
+                    <h5 class="modal-title fw-bold text-dark" id="modalRiwayatLabel">Riwayat & Status Permohonan Anda</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body p-4 custom-scroll">
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle text-nowrap mb-0">
+                            <thead>
+                                <tr>
+                                    <th class="py-3">ID</th>
+                                    <th class="py-3">Nama (NIM)</th>
+                                    <th class="py-3">Departemen</th>
+                                    <th class="py-3">Akses Berkas</th>
+                                    <th class="py-3">Status Sistem</th>
+                                    <th class="py-3">Catatan Validator</th>
+                                    <th class="py-3 text-center">Aksi</th>
+                                </tr>
+                            </thead>
+                            <tbody id="tabelRiwayat">
+                                <tr>
+                                    <td colspan="7" class="text-center py-5 text-muted">Memuat riwayat pengajuan...</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                <div class="modal-footer border-top-0 px-4 pb-4">
+                    <button type="button" class="btn btn-secondary px-4 fw-medium" data-bs-dismiss="modal">Tutup</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+    <script>
+        const API_URL = 'http://localhost:3000/api/mahasiswa/pengembalian-ukt';
+        const BASE_HOST = 'http://localhost:3000'; 
+
+        function initStudentID() {
+            let studentId = localStorage.getItem('student_id') || '14';
+            const inputId = document.getElementById('student_id');
+            
+            inputId.value = studentId;
+            
+            // Menggunakan event 'input' agar mendeteksi secara real-time saat angka diketik
+            inputId.addEventListener('input', () => {
+                localStorage.setItem('student_id', inputId.value);
+                loadStatusRiwayat();
+            });
+        }
+
+        function updateFileName(input, statusElementId) {
+            const statusElement = document.getElementById(statusElementId);
+            if (input.files && input.files.length > 0) {
+                statusElement.textContent = input.files[0].name;
+                statusElement.style.color = "#1e293b"; 
+                statusElement.style.fontStyle = "normal";
+            } else {
+                statusElement.textContent = "Belum ada berkas terpilih";
+                statusElement.style.color = "#94a3b8";
+                statusElement.style.fontStyle = "italic";
+            }
+        }
+
+        async function loadStatusRiwayat() {
+            const studentId = document.getElementById('student_id').value;
+            if(!studentId) {
+                document.getElementById('tabelRiwayat').innerHTML = `<tr><td colspan="7" class="text-center py-5 text-muted">Silakan masukkan ID Mahasiswa terlebih dahulu.</td></tr>`;
+                return;
+            }
+
+            try {
+                const response = await fetch(`${API_URL}/status?student_id=${studentId}`);
+                if (!response.ok) throw new Error('API Status bermasalah');
+                
+                const result = await response.json();
+                const tbody = document.getElementById('tabelRiwayat');
+                tbody.innerHTML = '';
+
+                if (result.success && result.data.length > 0) {
+                    result.data.forEach(item => {
+                        let statusBadge = '';
+                        
+                        if (item.status_sistem.includes('Selesai')) {
+                            statusBadge = `<span class="badge bg-success badge-status">${item.status_sistem}</span>`;
+                        } else if (item.status_sistem.includes('Ditolak')) {
+                            statusBadge = `<span class="badge bg-danger badge-status">${item.status_sistem}</span>`;
+                        } else if (item.status_sistem.includes('Revisi')) {
+                            statusBadge = `<span class="badge bg-warning text-dark badge-status">${item.status_sistem}</span>`;
+                        } else if (item.status_sistem.includes('Fakultas')) {
+                            statusBadge = `<span class="badge bg-info text-dark badge-status">${item.status_sistem}</span>`;
+                        } else {
+                            statusBadge = `<span class="badge bg-primary badge-status">${item.status_sistem}</span>`;
+                        }
+
+                        const bisaRevisi = item.status_sistem.includes('Revisi') || item.status_sistem.includes('Ditolak');
+                        const btnAksi = bisaRevisi 
+                            ? `<button class="btn btn-sm btn-outline-warning fw-semibold" onclick="alert('Fungsi Revisi: ID ${item.id_pengajuan}')">✏️ Revisi</button>` 
+                            : `<span class="text-muted small">No Action</span>`;
+
+                        const linkSurat = item.file_surat ? `<a href="${BASE_HOST}${item.file_surat}" target="_blank" class="d-block mb-1 text-decoration-none small">📄 Surat Mhn.</a>` : '';
+                        const linkUKT = item.file_ukt ? `<a href="${BASE_HOST}${item.file_ukt}" target="_blank" class="d-block mb-1 text-decoration-none small">📄 Bukti UKT</a>` : '';
+                        const linkSK = item.file_sk ? `<a href="${BASE_HOST}${item.file_sk}" target="_blank" class="d-block text-decoration-none small">📄 SK Rektor</a>` : '';
+                        
+                        const fileAkses = (linkSurat || linkUKT || linkSK) ? `${linkSurat}${linkUKT}${linkSK}` : `<span class="text-muted">-</span>`;
+
+                        const row = `
+                            <tr>
+                                <td class="fw-bold">${item.id_pengajuan}</td>
+                                <td>${item.nama} <br><small class="text-muted">${item.nim}</small></td>
+                                <td><small>${item.departemen}</small></td>
+                                <td>${fileAkses}</td>
+                                <td>${statusBadge}</td>
+                                <td><small class="text-secondary text-wrap" style="min-width:180px; display:inline-block;">${item.catatan_petugas}</small></td>
+                                <td class="text-center">${btnAksi}</td>
+                            </tr>
+                        `;
+                        tbody.insertAdjacentHTML('beforeend', row);
+                    });
+                } else {
+                    tbody.innerHTML = `<tr><td colspan="7" class="text-center py-5 text-muted">Belum ada riwayat pengajuan dokumen untuk ID ${studentId}.</td></tr>`;
+                }
+            } catch (error) {
+                console.error(error);
+                document.getElementById('tabelRiwayat').innerHTML = `
+                    <tr><td colspan="7" class="text-center py-5 text-danger small">Gagal memuat data riwayat dari backend server.</td></tr>
+                `;
+            }
+        }
+
+        document.getElementById('formPengajuan').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const studentId = document.getElementById('student_id').value;
+            const deptSelected = document.querySelector('input[name="departemen"]:checked').value;
+
+            const fileAppLetter = document.getElementById('file_app_letter').files[0];
+            const fileUktReceipt = document.getElementById('file_ukt_receipt').files[0];
+            const fileRectorDecree = document.getElementById('file_rector_decree').files[0];
+
+            const formData = new FormData();
+            formData.append('student_id', studentId);
+            formData.append('nama', document.getElementById('nama').value);
+            formData.append('nim', document.getElementById('nim').value);
+            formData.append('departemen', deptSelected);
+            formData.append('whatsapp', document.getElementById('whatsapp').value);
+            
+            if (fileAppLetter) formData.append('application_letter_file', fileAppLetter);
+            if (fileUktReceipt) formData.append('ukt_payment_receipt_file', fileUktReceipt);
+            if (fileRectorDecree) formData.append('rector_decree_file', fileRectorDecree);
+
+            try {
+                document.getElementById('btnSubmit').disabled = true;
+                document.getElementById('btnSubmit').innerText = '⏳ Mengirim Berkas...';
+
+                const response = await fetch(API_URL, {
+                    method: 'POST',
+                    body: formData 
+                });
+
+                const resData = await response.json();
+
+                if (response.ok && resData.success) {
+                    alert(resData.message || 'Pengajuan berhasil dikirim!');
+                    
+                    const currentId = document.getElementById('student_id').value;
+                    document.getElementById('formPengajuan').reset();
+                    document.getElementById('student_id').value = currentId;
+                    
+                    document.getElementById('status-app-letter').textContent = "Belum ada berkas terpilih";
+                    document.getElementById('status-ukt-receipt').textContent = "Belum ada berkas terpilih";
+                    document.getElementById('status-rector-decree').textContent = "Belum ada berkas terpilih";
+                    
+                    await loadStatusRiwayat();
+                    
+                    const modalRiwayat = new bootstrap.Modal(document.getElementById('modalRiwayat'));
+                    modalRiwayat.show();
+
+                } else {
+                    // Menampilkan pesan error spesifik dari backend jika gagal (misal: error foreign key)
+                    alert('Gagal menyimpan data ke database: ' + (resData.message || 'Error server'));
+                }
+            } catch (error) {
+                console.error(error);
+                alert('Gagal mengirim data. Pastikan server backend Anda berjalan.');
+            } finally {
+                document.getElementById('btnSubmit').disabled = false;
+                document.getElementById('btnSubmit').innerText = '🚀 Kirim Permohonan';
+            }
+        });
+
+        window.addEventListener('DOMContentLoaded', () => {
+            initStudentID();
+            loadStatusRiwayat();
+        });
+    </script>
+</body>
+</html>
