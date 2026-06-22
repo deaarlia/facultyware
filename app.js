@@ -1,80 +1,57 @@
-require('dotenv').config();
-var express = require('express');
-var path = require('path');
-var cookieParser = require('cookie-parser');
-var logger = require('morgan');
-var session = require('express-session');
-var MySQLStore = require('express-mysql-session')(session);
+const express = require('express');
+const path = require('path');
+const cookieParser = require('cookie-parser');
+const logger = require('morgan');
+const cors = require('cors'); // Library untuk mengatasi isu CORS
 
-var indexRouter = require('./routes/index');
-var usersRouter = require('./routes/users');
-// [BARU] Import routes mahasiswa dan wd2
-const mahasiswaRoutes = require('./routes/mahasiswaRoutes');
-const wd2Routes = require('./routes/wd2Routes');
-const adminRoutes = require('./routes/adminRoutes');
+// Import Router bawaan proyek Anda
+const indexRouter = require('./routes/index');
+const usersRouter = require('./routes/users');
+const mahasiswaRouter = require('./routes/mahasiswaRoutes'); // Router khusus mahasiswa yang kita buat
 
-const { notFoundHandler, errorHandler } = require('./middlewares/error');
+const app = express();
 
-var app = express();
-
-// view engine setup
-app.set('views', path.join(__dirname, 'views'));
-app.set('view engine', 'ejs');
-
+// ==========================================
+// 1. MIDDLEWARE UTAMA (Wajib paling atas)
+// ==========================================
+app.use(cors({ origin: '*' })); // Membuka akses untuk semua port frontend (Live Server)
 app.use(logger('dev'));
 app.use(express.json());
-app.use(express.urlencoded({ extended: false }));
+app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
+
+// Menyediakan akses folder public dan upload file fisik
 app.use(express.static(path.join(__dirname, 'public')));
-app.use('/api/wd2', wd2Routes);
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
-// Session configuration
-const sessionStore = new MySQLStore({
-  host: process.env.DB_HOST,
-  user: process.env.DB_USER,
-  password: process.env.DB_PASSWORD,
-  database: process.env.DB_NAME,
-
-  clearExpired: false,
-  checkExpirationInterval: 0, 
-  schema: {
-    tableName: 'sessions',
-    columnNames: {
-      session_id: 'id',
-      expires: 'last_activity',
-      data: 'payload'
-    }
-  }
-});
-
-// Middleware Session diletakkan di sini (di atas pendaftaran semua route)
-app.use(session({
-  key: 'session_cookie_name',
-  secret: process.env.SESSION_SECRET || 'secret',
-  store: sessionStore,
-  resave: true,
-  saveUninitialized: false,
-  cookie: {
-    // maxAge: 1000 * 60 * 60 * 24 // 1 day
-  }
-}));
-
-// [BARU & DIPINDAH] Registrasi API Endpoint untuk Mahasiswa dan Wakil Dekan 2
-// Dipastikan berada di bawah middleware session agar bisa membaca req.session mahasiswa/dosen yang login
-app.use('/api/mahasiswa', mahasiswaRoutes);
-app.use('/api/wd2', wd2Routes);
-
-// Base Web Routes
+// ==========================================
+// 2. REGISTRASI ROUTER / ENDPOINT
+// ==========================================
 app.use('/', indexRouter);
 app.use('/users', usersRouter);
 
-// Admin routes (web pages + API)
-app.use('/', adminRoutes);
+// Prefix global untuk mahasiswa. 
+// Jalur di dalam routes/mahasiswa.js otomatis akan diawali dengan /api/mahasiswa
+app.use('/api/mahasiswa', mahasiswaRouter);
 
-// catch 404 and forward to error handler
-app.use(notFoundHandler);
+// ==========================================
+// 3. ERROR HANDLING (FALLBACK)
+// ==========================================
+// Menangkap request yang nyasar atau salah ketik URL
+app.use((req, res, next) => {
+    res.status(404).json({
+        success: false,
+        message: "Endpoint tidak ditemukan. Periksa kembali method (GET/POST) atau URL Anda."
+    });
+});
 
-// error handler
-app.use(errorHandler);
+// Menangkap error internal server
+app.use((err, req, res, next) => {
+    console.error("Error pada Server:", err.stack);
+    res.status(err.status || 500).json({
+        success: false,
+        message: err.message || "Terjadi kesalahan internal pada server backend."
+    });
+});
 
-module.exports = app;
+module.exports = app; // Diekspor agar bisa dieksekusi oleh bin/www

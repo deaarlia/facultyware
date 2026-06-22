@@ -1,0 +1,357 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard Wakil Dekan II - Kelola Pengembalian UKT</title>
+    
+    <link rel="stylesheet" href="assets/basecoat.min.css">
+    
+    <style>
+        body { 
+            font-family: system-ui, -apple-system, sans-serif; 
+            padding: 24px; 
+            background: #f8f9fa; 
+            color: #18181b; 
+            margin: 0;
+        }
+        .container-fluid { width: 100%; max-width: 96%; margin: 0 auto; }
+        .top-bar { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #e4e4e7; padding-bottom: 20px; margin-bottom: 24px; }
+        .header-title h1 { margin: 0; font-size: 26px; color: #16a34a; font-weight: 700; tracking-tight: -0.025em; }
+        .header-title p { margin: 4px 0 0 0; color: #71717a; font-size: 14px; }
+        .account-badge { background: #ffffff; padding: 12px 16px; border-radius: 8px; border: 1px solid #e4e4e7; box-shadow: 0 1px 2px rgba(0,0,0,0.02); text-align: right; }
+        .account-badge p { margin: 0; font-size: 13px; }
+
+        /* KARTU STATISTIK RINGKAS */
+        .stats-grid { display: flex; gap: 16px; margin-bottom: 24px; }
+        .stat-card { flex: 1; background: #ffffff; padding: 20px; border-radius: 8px; border: 1px solid #e4e4e7; box-shadow: 0 1px 3px rgba(0,0,0,0.02); }
+        .stat-card h4 { margin: 0 0 6px 0; font-size: 12px; color: #71717a; text-transform: uppercase; letter-spacing: 0.05em; font-weight: 600; }
+        .stat-card p { margin: 0; font-size: 24px; font-weight: 700; color: #18181b; }
+
+        /* KARTU TABEL */
+        .card { background: #ffffff; padding: 24px; border-radius: 8px; border: 1px solid #e4e4e7; box-shadow: 0 1px 3px rgba(0,0,0,0.02); }
+        .card-header-wrapper { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+        .card-title { margin: 0; font-size: 18px; font-weight: 600; color: #18181b; }
+
+        /* BUTTON EKSPOR MODERN */
+        .btn-export {
+            background-color: #2563eb; color: white; border: none; padding: 10px 16px; border-radius: 6px; font-size: 13px; font-weight: 600; cursor: pointer; display: inline-flex; align-items: center; gap: 8px; transition: background 0.2s; box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+        }
+        .btn-export:hover { background-color: #1d4ed8; }
+
+        /* BUTTON AKSI MODERN */
+        .btn-action-approve {
+            background-color: #16a34a; color: white; border: none; padding: 6px 14px; border-radius: 6px; font-size: 12px; font-weight: 600; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; transition: background 0.2s;
+        }
+        .btn-action-approve:hover { background-color: #15803d; }
+
+        .btn-action-reject {
+            background-color: #dc2626; color: white; border: none; padding: 6px 14px; border-radius: 6px; font-size: 12px; font-weight: 600; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; transition: background 0.2s;
+        }
+        .btn-action-reject:hover { background-color: #b91c1c; }
+
+        /* MODAL DIALOG */
+        .modal { display: none; position: fixed; z-index: 100; left: 0; top: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.4); align-items: center; justify-content: center; backdrop-filter: blur(2px); }
+        .modal-content { background: white; padding: 24px; border-radius: 8px; width: 440px; border: 1px solid #e4e4e7; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1); }
+        .form-control { width: 100%; padding: 10px; border: 1px solid #e4e4e7; border-radius: 6px; box-sizing: border-box; font-size: 14px; margin-top: 8px; margin-bottom: 20px; font-family: inherit; }
+        .form-control:focus { outline: 2px solid #16a34a; border-color: transparent; }
+        .modal-buttons { display: flex; justify-content: flex-end; gap: 10px; }
+    </style>
+</head>
+<body>
+
+    <div class="container-fluid">
+        
+        <div class="top-bar">
+            <div class="header-title">
+                <h1>Form Pengembalian UKT Mahasiswa</h1>
+                <p>Persetujuan & Validasi Akhir Dana Pengembalian UKT</p>
+            </div>
+            <div class="account-badge">
+                <p><strong>Jabatan:</strong> Wakil Dekan II</p>
+                <p style="color: #71717a; margin-top: 2px; font-weight: 500;">Dr. Budi Santoso, M.Si.</p>
+            </div>
+        </div>
+
+        <div class="stats-grid">
+            <div class="stat-card" style="border-left: 4px solid #f59e0b;">
+                <h4>Perlu Review WD2</h4>
+                <p id="count-pending">0 Permohonan</p>
+            </div>
+            <div class="stat-card" style="border-left: 4px solid #16a34a;">
+                <h4>Total Permohonan Disetujui</h4>
+                <p id="count-approved">0 Permohonan</p>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-header-wrapper">
+                <h3 class="card-title">Daftar Antrean Persetujuan Pengembalian UKT</h3>
+                <button type="button" class="btn-export" onclick="eksporLaporanAkhir()">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                    Ekspor Laporan Akhir
+                </button>
+            </div>
+            
+            <div style="overflow-x: auto; width: 100%;">
+                <table style="width: 100%; border-collapse: collapse; text-align: left; font-size: 14px;">
+                    <thead>
+                        <tr style="border-bottom: 1px solid #e4e4e7;">
+                            <th style="padding: 12px 16px; font-weight: 500; color: #71717a; width: 8px;">ID</th>
+                            <th style="padding: 12px 16px; font-weight: 500; color: #71717a; width: 25%;">Nama / NIM</th>
+                            <th style="padding: 12px 16px; font-weight: 500; color: #71717a; width: 20%;">Departemen</th>
+                            <th style="padding: 12px 16px; font-weight: 500; color: #71717a; width: 20%;">Berkas Lampiran</th>
+                            <th style="padding: 12px 16px; font-weight: 500; color: #71717a; width: 17%;">Status Sistem</th>
+                            <th style="padding: 12px 16px; font-weight: 500; color: #71717a; width: 15%;">Aksi Keputusan</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tbodyWD2">
+                        <tr style="border-bottom: 1px solid #e4e4e7;">
+                            <td colspan="6" style="padding: 32px; text-align: center; color: #a1a1aa;">Memuat berkas antrean...</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <div id="reviewModal" class="modal">
+        <div class="modal-content">
+            <h3 style="margin-top:0; font-size:18px; font-weight:600;" id="modalTitle">Beri Catatan Review</h3>
+            <input type="hidden" id="modalIdPengajuan">
+            <input type="hidden" id="modalActionType">
+            
+            <label style="font-size:13px; font-weight:600; color:#3f3f46;">Tulis Catatan / Alasan:</label>
+            <textarea id="modalCatatan" class="form-control" rows="3" placeholder="Contoh: Berkas sesuai, disetujui pencairan."></textarea>
+            
+            <div class="modal-buttons">
+                <button type="button" onclick="closeModal()" style="background:#f4f4f5; border:1px solid #e4e4e7; padding:8px 14px; border-radius:6px; cursor:pointer; font-size:13px; font-weight:500;">Batal</button>
+                <button type="button" id="btnModalSubmit" onclick="submitReview()" style="background:#2563eb; color:white; border:none; padding:8px 14px; border-radius:6px; cursor:pointer; font-size:13px; font-weight:600;">Simpan Keputusan</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+// SUDAH DIUBAH KE PORT 3000
+const BACKEND_URL = "http://localhost:3000";
+
+async function loadAntreanWD2() {
+    try {
+        const response = await fetch(`${BACKEND_URL}/api/wd2/pengembalian-ukt/list`);
+        const resData = await response.json();
+        
+        const tbody = document.getElementById('tbodyWD2');
+        tbody.innerHTML = '';
+
+        if (!resData.success || !resData.data || resData.data.length === 0) {
+            tbody.innerHTML = `<tr><td colspan="6" style="padding: 32px; text-align: center; color: #a1a1aa; font-size: 14px;">Tidak ada antrean persetujuan saat ini.</td></tr>`;
+            return;
+        }
+
+        let pendingCount = 0;
+        let approvedCount = 0;
+
+        resData.data.forEach(item => {
+            const statusSistem = item.status_sistem || "Menunggu Validasi Admin";
+            const namaMahasiswa = item.nama_mahasiswa || item.nama || "Mahasiswa";
+            const nimMahasiswa = item.nim || "-";
+            const departemen = item.departemen || item.id_departemen || "-";
+
+            if (statusSistem.includes('Admin') || statusSistem.includes('Validasi') || statusSistem.includes('Menunggu')) {
+                pendingCount++;
+            }
+            if (statusSistem.includes('Selesai') || statusSistem.includes('Wakil Dekan 2')) {
+                approvedCount++;
+            }
+            
+            let badgeStyle = "padding: 6px 12px; border-radius: 9999px; font-size: 11px; font-weight: 600; display: inline-flex; align-items: center; white-space: nowrap;";
+            if (statusSistem.includes('Ditolak')) {
+                badgeStyle += " background-color: #dc2626; color: #ffffff;";
+            } else if (statusSistem.includes('Wakil Dekan 2') || statusSistem.includes('Selesai')) {
+                badgeStyle += " background-color: #16a34a; color: #ffffff;";
+            } else {
+                badgeStyle += " background-color: #f59e0b; color: #ffffff;";
+            }
+
+            let berkasHTML = `<div style="display: flex; flex-direction: column; gap: 6px; font-size: 12px; width: 100%; max-width: 180px;">`;
+            const btnFileStyle = "background-color: #2563eb; color: white; text-decoration: none; padding: 6px 12px; border-radius: 6px; font-size: 12px; font-weight: 500; display: inline-flex; align-items: center; justify-content: center; gap: 6px; transition: background 0.2s; border: none; cursor: pointer; width: 100%; box-sizing: border-box;";
+            const eyeIconSVG = `<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg> `;
+
+            if (item.appLetter) {
+                berkasHTML += `
+                    <a href="${BACKEND_URL}/uploads/${item.appLetter}" target="_blank" class="btn-file-view" style="${btnFileStyle}" onmouseover="this.style.backgroundColor='#1d4ed8'" onmouseout="this.style.backgroundColor='#2563eb'">
+                        ${eyeIconSVG} Surat Permohonan
+                    </a>`;
+            }
+            if (item.uktReceipt) {
+                berkasHTML += `
+                    <a href="${BACKEND_URL}/uploads/${item.uktReceipt}" target="_blank" class="btn-file-view" style="${btnFileStyle}" onmouseover="this.style.backgroundColor='#1d4ed8'" onmouseout="this.style.backgroundColor='#2563eb'">
+                        ${eyeIconSVG} Bukti Bayar
+                    </a>`;
+            }
+            if (item.rectorDecree) {
+                berkasHTML += `
+                    <a href="${BACKEND_URL}/uploads/${item.rectorDecree}" target="_blank" class="btn-file-view" style="${btnFileStyle}" onmouseover="this.style.backgroundColor='#1d4ed8'" onmouseout="this.style.backgroundColor='#2563eb'">
+                        ${eyeIconSVG} SK Rektorat
+                    </a>`;
+            }
+            if (!item.appLetter && !item.uktReceipt && !item.rectorDecree) {
+                berkasHTML += `<span style="color: #a1a1aa; font-style: italic; text-align: center; padding: 4px 0;">Tidak ada berkas</span>`;
+            }
+            berkasHTML += `</div>`;
+
+            let aksiHTML = `<span style="font-size: 12px; color: #a1a1aa;">Selesai diproses</span>`;
+            if (!statusSistem.includes('Wakil Dekan 2') && !statusSistem.includes('Selesai') && !statusSistem.includes('Ditolak')) {
+                aksiHTML = `
+                    <div style="display: flex; gap: 8px;">
+                        <button type="button" class="btn-action-approve" onclick="openReviewModal('${item.id}', 'setuju')">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                            Setuju
+                        </button>
+                        <button type="button" class="btn-action-reject" onclick="openReviewModal('${item.id}', 'tolak')">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                            Tolak
+                        </button>
+                    </div>
+                `;
+            }
+
+            tbody.innerHTML += `
+                <tr style="border-bottom: 1px solid #e4e4e7;" onmouseover="this.style.backgroundColor='#fafafa'" onmouseout="this.style.backgroundColor='transparent'">
+                    <td style="padding: 14px 16px; font-weight: 600; color: #18181b;">${item.id}</td>
+                    <td style="padding: 14px 16px;">
+                        <div style="font-weight: 500; color: #18181b;">${namaMahasiswa}</div>
+                        <div style="font-size: 12px; color: #71717a; margin-top: 2px;">NIM: ${nimMahasiswa}</div>
+                    </td>
+                    <td style="padding: 14px 16px; color: #3f3f46;">${departemen}</td>
+                    <td style="padding: 14px 16px;">${berkasHTML}</td>
+                    <td style="padding: 14px 16px;">
+                        <span style="${badgeStyle}">${statusSistem}</span>
+                    </td>
+                    <td style="padding: 14px 16px;">${aksiHTML}</td>
+                </tr>
+            `;
+        });
+
+        document.getElementById('count-pending').innerText = `${pendingCount} Permohonan`;
+        document.getElementById('count-approved').innerText = `${approvedCount} Permohonan`;
+
+    } catch (error) {
+        console.error("Gagal memuat antrean WD2:", error);
+        document.getElementById('tbodyWD2').innerHTML = `<tr><td colspan="6" style="padding: 32px; text-align: center; color: #dc2626; font-weight: 500;">Terjadi kesalahan koneksi saat mengambil data dari server.</td></tr>`;
+    }
+}
+
+async function eksporLaporanAkhir() {
+    try {
+        const response = await fetch(`${BACKEND_URL}/api/wd2/permohonan/ekspor`);
+        const resData = await response.json();
+        
+        if (!resData.success) {
+            alert("Gagal memproses data ekspor: " + resData.message);
+            return;
+        }
+
+        if (!resData.data || resData.data.length === 0) {
+            alert("Belum ada rekam keputusan (Setuju/Tolak) oleh WD2 yang dapat diekspor.");
+            return;
+        }
+
+        const headers = ["NIM", "Nama Mahasiswa", "Departemen", "Status Akhir", "Tanggal Keputusan"];
+        const csvRows = [];
+        csvRows.push(headers.join(","));
+
+        resData.data.forEach(item => {
+            let statusTeks = item.Status_Akhir === 2 ? "Disetujui Wakil Dekan 2" : "Ditolak";
+            
+            const namaAman = `"${(item.Nama_Mahasiswa || '').replace(/"/g, '""')}"`;
+            const deptAman = `"${(item.Departemen || '-').replace(/"/g, '""')}"`;
+            const tanggalFormat = item.Tanggal_Keputusan ? new Date(item.Tanggal_Keputusan).toLocaleDateString('id-ID') : '-';
+
+            const row = [
+                item.NIM,
+                namaAman,
+                deptAman,
+                statusTeks,
+                tanggalFormat
+            ];
+            csvRows.push(row.join(","));
+        });
+
+        const csvContent = "data:text/csv;charset=utf-8,\uFEFF" + csvRows.join("\n");
+        const encodedUri = encodeURI(csvContent);
+        
+        const downloadLink = document.createElement("a");
+        downloadLink.setAttribute("href", encodedUri);
+        downloadLink.setAttribute("download", `Laporan_Final_UKT_WD2_${new Date().toISOString().split('T')[0]}.csv`);
+        
+        document.body.appendChild(downloadLink);
+        downloadLink.click();
+        document.body.removeChild(downloadLink);
+
+    } catch (error) {
+        console.error("Gagal melakukan ekspor berkas:", error);
+        alert("Terjadi gangguan jaringan sewaktu mengunduh berkas laporan.");
+    }
+}
+
+function openReviewModal(id, action) {
+    document.getElementById('modalIdPengajuan').value = id;
+    document.getElementById('modalActionType').value = action;
+    document.getElementById('modalCatatan').value = '';
+    
+    if(action === 'setuju') {
+        document.getElementById('modalTitle').innerText = `Setujui Permohonan #${id}`;
+        document.getElementById('btnModalSubmit').style.backgroundColor = "#16a34a";
+        document.getElementById('btnModalSubmit').innerText = "Setujui & Proses";
+    } else {
+        document.getElementById('modalTitle').innerText = `Tolak Permohonan #${id}`;
+        document.getElementById('btnModalSubmit').style.backgroundColor = "#dc2626";
+        document.getElementById('btnModalSubmit').innerText = "Tolak Permohonan";
+    }
+    document.getElementById('reviewModal').style.display = 'flex';
+}
+
+function closeModal() {
+    document.getElementById('reviewModal').style.display = 'none';
+}
+
+async function submitReview() {
+    const id = document.getElementById('modalIdPengajuan').value;
+    const action = document.getElementById('modalActionType').value;
+    const catatan = document.getElementById('modalCatatan').value.trim();
+
+    if (!catatan) {
+        alert("Harap masukkan catatan review singkat untuk mahasiswa!");
+        return;
+    }
+
+    const statusFinal = (action === 'setuju') ? 'Selesai / Disetujui Wakil Dekan 2' : 'Ditolak';
+
+    try {
+        const response = await fetch(`${BACKEND_URL}/api/wd2/pengembalian-ukt/update`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                id_pengajuan: id,
+                status_sistem: statusFinal,
+                catatan: catatan
+            })
+        });
+
+        const hasil = await response.json();
+        if(hasil.success) {
+            closeModal();
+            loadAntreanWD2(); 
+        } else {
+            alert("Gagal memperbarui status: " + hasil.message);
+        }
+    } catch (error) {
+        alert("Terjadi masalah jaringan server.");
+    }
+}
+
+window.onload = loadAntreanWD2;
+    </script>
+</body>
+</html>
