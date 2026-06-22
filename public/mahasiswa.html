@@ -1,179 +1,387 @@
 <!DOCTYPE html>
-<html lang="id">
+<html lang="id" data-bs-theme="dark">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Pengajuan Pengembalian UKT - Mahasiswa</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
+        :root {
+            --background: #09090b;
+            --foreground: #fafafa;
+            --card: #09090b;
+            --card-foreground: #fafafa;
+            --border: #27272a;
+            --input: #27272a;
+            --primary: #fafafa;
+            --primary-foreground: #18181b;
+            --muted: #27272a;
+            --muted-foreground: #a1a1aa;
+        }
+
         body {
-            font-family: 'Plus Jakarta Sans', sans-serif;
-            background-color: #f8fafc;
-            color: #1e293b;
+            font-family: 'Inter', sans-serif;
+            background-color: var(--background);
+            color: var(--foreground);
+            margin: 0;
+            overflow-x: hidden;
         }
-        .navbar {
-            background-color: #ffffff;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+
+        
+        .layout-wrapper {
+            display: flex;
+            min-height: 100vh;
         }
-        .card {
-            border: none;
-            border-radius: 12px;
-            box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1), 0 4px 6px -2px rgba(0,0,0,0.05);
+
+        
+        .sidebar {
+            width: 260px;
+            border-right: 1px solid var(--border);
+            display: flex;
+            flex-direction: column;
+            padding: 1.5rem;
+            background-color: var(--background);
+            position: fixed;
+            top: 0;
+            bottom: 0;
+            left: 0;
         }
-        .form-label {
+
+        .sidebar-brand {
+            font-weight: 700;
+            font-size: 1.1rem;
+            margin-bottom: 2rem;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .sidebar-brand .logo-box {
+            width: 24px;
+            height: 24px;
+            background-color: var(--primary);
+            border-radius: 4px;
+        }
+
+        .sidebar-nav a {
+            display: block;
+            padding: 8px 12px;
+            color: var(--muted-foreground);
+            text-decoration: none;
+            border-radius: 6px;
+            font-size: 0.875rem;
+            font-weight: 500;
+            margin-bottom: 4px;
+            transition: all 0.2s;
+        }
+
+        .sidebar-nav a:hover, .sidebar-nav a.active {
+            background-color: var(--muted);
+            color: var(--foreground);
+        }
+
+        
+        .sidebar-bottom {
+            margin-top: auto;
+            border-top: 1px solid var(--border);
+            padding-top: 1rem;
+        }
+
+        .user-info {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 12px;
+        }
+
+        .user-avatar {
+            width: 32px;
+            height: 32px;
+            background-color: var(--muted);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
             font-weight: 600;
-            font-size: 0.9rem;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-            color: #475569;
+            font-size: 0.875rem;
+            border: 1px solid var(--border);
         }
+
+        
+        .main-content {
+            flex: 1;
+            margin-left: 260px;
+            padding: 3rem 4rem;
+        }
+
+        .header-title {
+            font-size: 1.875rem;
+            font-weight: 700;
+            letter-spacing: -0.025em;
+            margin-bottom: 0.5rem;
+        }
+
+        .header-desc {
+            color: var(--muted-foreground);
+            font-size: 1rem;
+            margin-bottom: 2.5rem;
+        }
+
+        
+        .card {
+            background-color: var(--card);
+            border: 1px solid var(--border);
+            border-radius: 0.75rem;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.5);
+        }
+
+        .form-label {
+            font-weight: 500;
+            font-size: 0.875rem;
+            color: var(--foreground);
+            margin-bottom: 0.5rem;
+            text-transform: none;
+            letter-spacing: normal;
+        }
+
+        .form-control {
+            background-color: transparent;
+            border: 1px solid var(--input);
+            color: var(--foreground);
+            border-radius: 0.375rem;
+            padding: 0.5rem 0.75rem;
+            font-size: 0.875rem;
+        }
+
+        .form-control:focus {
+            background-color: transparent;
+            border-color: var(--foreground);
+            box-shadow: none;
+            color: var(--foreground);
+        }
+
+        
+        .simbox {
+            background-color: rgba(245, 158, 11, 0.1);
+            border: 1px dashed rgba(245, 158, 11, 0.4);
+            border-radius: 0.5rem;
+        }
+
         
         .file-upload-box {
-            border: 1px solid #cbd5e1;
-            border-radius: 8px;
+            border: 1px solid var(--border);
+            border-radius: 0.5rem;
             padding: 12px 16px;
             margin-bottom: 12px;
             display: flex;
             justify-content: space-between;
             align-items: center;
-            background-color: #ffffff;
+            background-color: var(--card);
         }
-        .file-info {
-            display: flex;
-            flex-direction: column;
-            gap: 2px;
-        }
+
         .doc-title {
-            font-weight: 600;
-            font-size: 14px;
+            font-weight: 500;
+            font-size: 0.875rem;
+            color: var(--foreground);
         }
+
         .doc-status {
-            font-size: 12px;
-            color: #94a3b8;
-            font-style: italic;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-            max-width: 250px;
+            font-size: 0.75rem;
+            color: var(--muted-foreground);
+            font-style: normal;
+            margin-top: 2px;
         }
+
         .btn-upload {
-            background-color: #eff6ff;
-            color: #2563eb;
-            border: 1px solid #bfdbfe;
-            padding: 8px 16px;
-            border-radius: 6px;
-            font-size: 13px;
-            font-weight: 600;
+            background-color: var(--muted);
+            color: var(--foreground);
+            border: 1px solid var(--border);
+            padding: 6px 12px;
+            border-radius: 0.375rem;
+            font-size: 0.875rem;
+            font-weight: 500;
             cursor: pointer;
             transition: all 0.2s;
             margin: 0;
         }
+
         .btn-upload:hover {
-            background-color: #2563eb;
-            color: white;
+            background-color: var(--border);
         }
+
         .btn-upload input[type="file"] {
             display: none;
         }
 
+        
+        .btn-primary {
+            background-color: var(--primary);
+            color: var(--primary-foreground);
+            border: none;
+            font-weight: 500;
+            transition: opacity 0.2s;
+        }
+
+        .btn-primary:hover {
+            background-color: var(--primary);
+            color: var(--primary-foreground);
+            opacity: 0.9;
+        }
+
+        .btn-outline-danger {
+            border-color: #7f1d1d;
+            color: #f87171;
+        }
+        .btn-outline-danger:hover {
+            background-color: #7f1d1d;
+            color: #fca5a5;
+            border-color: #991b1b;
+        }
+
+        
         .btn-floating {
             position: fixed;
             bottom: 30px;
             right: 30px;
             z-index: 1050;
             border-radius: 50px;
-            padding: 12px 24px;
-            box-shadow: 0 10px 15px -3px rgba(37, 99, 235, 0.4);
-            font-weight: 600;
-            letter-spacing: 0.5px;
-            transition: transform 0.2s ease-in-out;
+            padding: 10px 20px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.5);
+            font-weight: 500;
+            font-size: 0.875rem;
+            border: 1px solid var(--border);
+            background-color: var(--card);
+            color: var(--foreground);
         }
+
         .btn-floating:hover {
-            transform: translateY(-3px);
+            background-color: var(--muted);
+            color: var(--foreground);
+        }
+
+        
+        .modal-content {
+            background-color: var(--background);
+            border: 1px solid var(--border);
+        }
+        .modal-header {
+            border-bottom: 1px solid var(--border);
+        }
+        .modal-footer {
+            border-top: 1px solid var(--border);
+        }
+        .table {
+            color: var(--foreground);
         }
         .table th {
-            font-weight: 600;
-            background-color: #f1f5f9;
-            color: #475569;
-            position: sticky;
-            top: 0;
-            z-index: 1;
-        }
-        .badge-status {
+            background-color: var(--muted);
+            color: var(--muted-foreground);
+            border-bottom: 1px solid var(--border);
             font-weight: 500;
-            padding: 0.5em 1em;
-            border-radius: 50px;
+            font-size: 0.875rem;
         }
-        .custom-scroll::-webkit-scrollbar { width: 8px; height: 8px; }
-        .custom-scroll::-webkit-scrollbar-track { background: #f1f5f9; border-radius: 4px; }
-        .custom-scroll::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
-        .custom-scroll::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+        .table td {
+            border-bottom: 1px solid var(--border);
+            font-size: 0.875rem;
+        }
+
+        .custom-scroll::-webkit-scrollbar { width: 6px; height: 6px; }
+        .custom-scroll::-webkit-scrollbar-track { background: var(--background); }
+        .custom-scroll::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+        .custom-scroll::-webkit-scrollbar-thumb:hover { background: var(--muted-foreground); }
     </style>
 </head>
 <body>
 
-    <nav class="navbar navbar-expand-lg navbar-light py-3">
-        <div class="container-fluid px-4">
-            <a class="navbar-brand fw-bold text-primary" href="#">Sistem UKT Mahasiswa</a>
-            <span class="navbar-text fw-medium">Portal Pengajuan</span>
-        </div>
-    </nav>
+    <div class="layout-wrapper">
+        <aside class="sidebar">
+            <div class="sidebar-brand">
+                <div class="logo-box"></div>
+                Sistem UKT
+            </div>
+            
+            <nav class="sidebar-nav">
+                <div class="text-uppercase text-muted mb-2 mt-4 px-2" style="font-size: 0.7rem; font-weight: 600; letter-spacing: 0.05em;">Menu Utama</div>
+                <a href="#" class="active">Formulir Pengajuan</a>
+                <a href="#" data-bs-toggle="modal" data-bs-target="#modalRiwayat">Riwayat Status</a>
+            </nav>
 
-    <div class="container my-4">
-        <div class="row justify-content-center">
-            <div class="col-lg-7 col-md-10">
-                <div class="card p-5">
-                    <h4 class="fw-bold mb-4 text-center text-dark">Formulir Pengajuan Pengembalian UKT</h4>
-                    <p class="text-center text-muted mb-4 small">Silakan lengkapi data di bawah ini dengan benar untuk memproses pengajuan Anda.</p>
-                    
+            <div class="sidebar-bottom">
+                <div class="user-info">
+                    <div class="user-avatar">M</div>
+                    <div style="line-height: 1.2;">
+                        <div style="font-size: 0.875rem; font-weight: 500;">Mahasiswa Aktif</div>
+                        <div style="font-size: 0.75rem; color: var(--muted-foreground);">Portal UKT</div>
+                    </div>
+                </div>
+                <button class="btn btn-outline-danger w-100 btn-sm d-flex align-items-center justify-content-center gap-2" onclick="alert('Fungsi logout dipicu')">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg>
+                    Log out
+                </button>
+            </div>
+        </aside>
+
+        <main class="main-content">
+            <div class="container-fluid p-0" style="max-width: 800px; margin: 0 auto;">
+                
+                <h1 class="header-title">Pengajuan Pengembalian UKT</h1>
+                <p class="header-desc">Lengkapi formulir di bawah ini dengan data yang valid untuk memproses pengajuan Anda pada sistem.</p>
+
+                <div class="card p-4 p-md-5">
                     <form id="formPengajuan">
                         
-                        <div class="mb-4 p-3 rounded" style="background-color: #fff7ed; border: 1px solid #ffedd5;">
-                            <label class="form-label text-warning-emphasis" style="color: #c2410c;">🛠️ SIMULASI ID MAHASISWA AKTIF</label>
-                            <input type="number" class="form-control py-2 fw-bold text-primary" id="student_id" placeholder="Contoh: 14, 15, 16" required>
-                            <small class="text-muted d-block mt-1" style="font-size: 0.75rem;">Ganti angka ini untuk mengetes riwayat & kirim data sebagai mahasiswa yang berbeda.</small>
+                        <div class="mb-4 p-3 simbox">
+                            <label class="form-label text-warning mb-1" style="font-size: 0.75rem; font-weight: 600;">🛠️ SIMULASI ID MAHASISWA</label>
+                            <input type="number" class="form-control" id="student_id" placeholder="Contoh: 14, 15, 16" required style="border-color: rgba(245, 158, 11, 0.4); background: rgba(0,0,0,0.2);">
+                            <small class="d-block mt-2" style="font-size: 0.7rem; color: #fbbf24;">Ganti angka ini untuk mengetes riwayat sebagai mahasiswa berbeda.</small>
                         </div>
                         
-                        <div class="mb-3">
-                            <label class="form-label">1. Nama Lengkap Mahasiswa/i <span class="text-danger">*</span></label>
-                            <input type="text" class="form-control py-2" id="nama" name="nama" placeholder="Masukkan nama lengkap Anda" required>
+                        <div class="mb-4">
+                            <label class="form-label">Nama Lengkap <span class="text-danger">*</span></label>
+                            <input type="text" class="form-control" id="nama" name="nama" placeholder="Masukkan nama lengkap sesuai KTM" required>
                         </div>
 
-                        <div class="mb-3">
-                            <label class="form-label">2. Nomor Induk Mahasiswa/i (NIM) <span class="text-danger">*</span></label>
-                            <input type="text" class="form-control py-2" id="nim" name="nim" placeholder="Masukkan NIM Anda" required>
+                        <div class="mb-4">
+                            <label class="form-label">Nomor Induk Mahasiswa (NIM) <span class="text-danger">*</span></label>
+                            <input type="text" class="form-control" id="nim" name="nim" placeholder="Contoh: 1234567890" required>
                         </div>
 
-                        <div class="mb-3">
-                            <label class="form-label">3. Departemen <span class="text-danger">*</span></label>
-                            <div class="d-flex gap-4 mt-2">
+                        <div class="mb-4">
+                            <label class="form-label mb-3">Departemen <span class="text-danger">*</span></label>
+                            <div class="d-flex flex-wrap gap-4">
                                 <div class="form-check">
                                     <input class="form-check-input" type="radio" name="departemen" id="dep1" value="TEKNIK KOMPUTER" required>
-                                    <label class="form-check-label" for="dep1">TEKNIK KOMPUTER</label>
+                                    <label class="form-check-label" for="dep1" style="font-size: 0.875rem;">Teknik Komputer</label>
                                 </div>
                                 <div class="form-check">
                                     <input class="form-check-input" type="radio" name="departemen" id="dep2" value="SISTEM INFORMASI">
-                                    <label class="form-check-label" for="dep2">SISTEM INFORMASI</label>
+                                    <label class="form-check-label" for="dep2" style="font-size: 0.875rem;">Sistem Informasi</label>
                                 </div>
                                 <div class="form-check">
                                     <input class="form-check-input" type="radio" name="departemen" id="dep3" value="INFORMATIKA">
-                                    <label class="form-check-label" for="dep3">INFORMATIKA</label>
+                                    <label class="form-check-label" for="dep3" style="font-size: 0.875rem;">Informatika</label>
                                 </div>
                             </div>
                         </div>
 
-                        <div class="mb-3 mt-4 bg-light p-3 rounded">
-                            <label class="form-label mb-3">4. UPLOAD BERKAS (FILE PDF) <span class="text-danger">*</span></label>
-                            <p class="text-muted small mb-3">Batas jumlah file: 1 per slot. Batas ukuran satu file: 10MB.</p>
+                        <hr class="my-4" style="border-color: var(--border);">
+
+                        <div class="mb-4">
+                            <div class="d-flex justify-content-between align-items-end mb-3">
+                                <div>
+                                    <label class="form-label mb-1">Upload Berkas Pendukung <span class="text-danger">*</span></label>
+                                    <p class="mb-0" style="font-size: 0.75rem; color: var(--muted-foreground);">Format .PDF, Maks 10MB per file.</p>
+                                </div>
+                            </div>
 
                             <div class="file-upload-box">
                                 <div class="file-info">
-                                    <span class="doc-title">Surat Permohonan (Application Letter)</span>
+                                    <span class="doc-title">Surat Permohonan</span>
                                     <span class="doc-status" id="status-app-letter">Belum ada berkas terpilih</span>
                                 </div>
                                 <label class="btn-upload">
-                                    + Unggah file
+                                    Pilih File
                                     <input type="file" id="file_app_letter" name="application_letter_file" accept=".pdf" required onchange="updateFileName(this, 'status-app-letter')">
                                 </label>
                             </div>
@@ -184,72 +392,72 @@
                                     <span class="doc-status" id="status-ukt-receipt">Belum ada berkas terpilih</span>
                                 </div>
                                 <label class="btn-upload">
-                                    + Unggah file
+                                    Pilih File
                                     <input type="file" id="file_ukt_receipt" name="ukt_payment_receipt_file" accept=".pdf" required onchange="updateFileName(this, 'status-ukt-receipt')">
                                 </label>
                             </div>
 
                             <div class="file-upload-box">
                                 <div class="file-info">
-                                    <span class="doc-title">SK Rektor / Berkas Pendukung</span>
+                                    <span class="doc-title">SK Rektor / Bukti Cuti</span>
                                     <span class="doc-status" id="status-rector-decree">Belum ada berkas terpilih</span>
                                 </div>
                                 <label class="btn-upload">
-                                    + Unggah file
+                                    Pilih File
                                     <input type="file" id="file_rector_decree" name="rector_decree_file" accept=".pdf" required onchange="updateFileName(this, 'status-rector-decree')">
                                 </label>
                             </div>
                         </div>
 
-                        <div class="mb-4">
-                            <label class="form-label">5. No. Handphone / WhatsApp Aktif <span class="text-danger">*</span></label>
-                            <input type="text" class="form-control py-2" id="whatsapp" name="whatsapp" placeholder="Contoh: 08123456789" required>
+                        <div class="mb-5">
+                            <label class="form-label">No. WhatsApp Aktif <span class="text-danger">*</span></label>
+                            <input type="text" class="form-control" id="whatsapp" name="whatsapp" placeholder="Contoh: 08123456789" required>
                         </div>
 
-                        <button type="submit" class="btn btn-primary w-100 py-3 mt-2 fw-bold" id="btnSubmit" style="font-size: 1.1rem; border-radius: 8px;">
-                            🚀 Kirim Permohonan
+                        <button type="submit" class="btn btn-primary w-100 py-2" id="btnSubmit">
+                            Kirim Permohonan
                         </button>
                     </form>
                 </div>
             </div>
-        </div>
+        </main>
     </div>
 
-    <button class="btn btn-primary btn-floating" data-bs-toggle="modal" data-bs-target="#modalRiwayat">
-        🕒 Riwayat Pengajuan
+    <button class="btn btn-floating" data-bs-toggle="modal" data-bs-target="#modalRiwayat">
+        Riwayat Pengajuan
     </button>
 
     <div class="modal fade" id="modalRiwayat" tabindex="-1" aria-labelledby="modalRiwayatLabel" aria-hidden="true">
         <div class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable">
-            <div class="modal-content border-0 shadow-lg" style="border-radius: 16px;">
-                <div class="modal-header bg-white border-bottom-0 pt-4 px-4 pb-2">
-                    <h5 class="modal-title fw-bold text-dark" id="modalRiwayatLabel">Riwayat & Status Permohonan Anda</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            <div class="modal-content shadow-lg">
+                <div class="modal-header pt-4 px-4 pb-3">
+                    <h5 class="modal-title fw-bold" id="modalRiwayatLabel" style="font-size: 1.1rem;">Riwayat & Status Permohonan</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
-                <div class="modal-body p-4 custom-scroll">
+                <div class="modal-body p-0 custom-scroll">
                     <div class="table-responsive">
-                        <table class="table table-hover align-middle text-nowrap mb-0">
+                        <table class="table table-borderless align-middle text-nowrap mb-0">
                             <thead>
                                 <tr>
-                                    <th class="py-3">ID</th>
-                                    <th class="py-3">Nama (NIM)</th>
+                                    <th class="py-3 px-4">ID</th>
+                                    <th class="py-3">Nama & NIM</th>
                                     <th class="py-3">Departemen</th>
-                                    <th class="py-3">Akses Berkas</th>
-                                    <th class="py-3">Status Sistem</th>
-                                    <th class="py-3">Catatan Validator</th>
-                                    <th class="py-3 text-center">Aksi</th>
+                                    <th class="py-3">Berkas</th>
+                                    <th class="py-3">Status</th>
+                                    <th class="py-3">Catatan</th>
+                                    <th class="py-3 text-center px-4">Aksi</th>
                                 </tr>
                             </thead>
                             <tbody id="tabelRiwayat">
                                 <tr>
-                                    <td colspan="7" class="text-center py-5 text-muted">Memuat riwayat pengajuan...</td>
+                                    <td colspan="7" class="text-center py-5" style="color: var(--muted-foreground);">Memuat riwayat pengajuan...</td>
                                 </tr>
                             </tbody>
                         </table>
                     </div>
                 </div>
-                <div class="modal-footer border-top-0 px-4 pb-4">
-                    <button type="button" class="btn btn-secondary px-4 fw-medium" data-bs-dismiss="modal">Tutup</button>
+                <div class="modal-footer px-4 py-3 border-top-0">
+                    <button type="button" class="btn btn-sm btn-upload" data-bs-dismiss="modal">Tutup</button>
                 </div>
             </div>
         </div>
@@ -267,7 +475,7 @@
             
             inputId.value = studentId;
             
-            // Menggunakan event 'input' agar mendeteksi secara real-time saat angka diketik
+        
             inputId.addEventListener('input', () => {
                 localStorage.setItem('student_id', inputId.value);
                 loadStatusRiwayat();
@@ -278,19 +486,17 @@
             const statusElement = document.getElementById(statusElementId);
             if (input.files && input.files.length > 0) {
                 statusElement.textContent = input.files[0].name;
-                statusElement.style.color = "#1e293b"; 
-                statusElement.style.fontStyle = "normal";
+                statusElement.style.color = "#fafafa"; 
             } else {
                 statusElement.textContent = "Belum ada berkas terpilih";
-                statusElement.style.color = "#94a3b8";
-                statusElement.style.fontStyle = "italic";
+                statusElement.style.color = "#a1a1aa";
             }
         }
 
         async function loadStatusRiwayat() {
             const studentId = document.getElementById('student_id').value;
             if(!studentId) {
-                document.getElementById('tabelRiwayat').innerHTML = `<tr><td colspan="7" class="text-center py-5 text-muted">Silakan masukkan ID Mahasiswa terlebih dahulu.</td></tr>`;
+                document.getElementById('tabelRiwayat').innerHTML = `<tr><td colspan="7" class="text-center py-5" style="color: var(--muted-foreground);">Silakan masukkan ID Mahasiswa terlebih dahulu.</td></tr>`;
                 return;
             }
 
@@ -307,48 +513,48 @@
                         let statusBadge = '';
                         
                         if (item.status_sistem.includes('Selesai')) {
-                            statusBadge = `<span class="badge bg-success badge-status">${item.status_sistem}</span>`;
+                            statusBadge = `<span class="badge bg-success" style="font-weight:500;">${item.status_sistem}</span>`;
                         } else if (item.status_sistem.includes('Ditolak')) {
-                            statusBadge = `<span class="badge bg-danger badge-status">${item.status_sistem}</span>`;
+                            statusBadge = `<span class="badge bg-danger" style="font-weight:500;">${item.status_sistem}</span>`;
                         } else if (item.status_sistem.includes('Revisi')) {
-                            statusBadge = `<span class="badge bg-warning text-dark badge-status">${item.status_sistem}</span>`;
+                            statusBadge = `<span class="badge bg-warning text-dark" style="font-weight:500;">${item.status_sistem}</span>`;
                         } else if (item.status_sistem.includes('Fakultas')) {
-                            statusBadge = `<span class="badge bg-info text-dark badge-status">${item.status_sistem}</span>`;
+                            statusBadge = `<span class="badge bg-info text-dark" style="font-weight:500;">${item.status_sistem}</span>`;
                         } else {
-                            statusBadge = `<span class="badge bg-primary badge-status">${item.status_sistem}</span>`;
+                            statusBadge = `<span class="badge" style="background-color: var(--primary); color: var(--primary-foreground); font-weight:500;">${item.status_sistem}</span>`;
                         }
 
                         const bisaRevisi = item.status_sistem.includes('Revisi') || item.status_sistem.includes('Ditolak');
                         const btnAksi = bisaRevisi 
-                            ? `<button class="btn btn-sm btn-outline-warning fw-semibold" onclick="alert('Fungsi Revisi: ID ${item.id_pengajuan}')">✏️ Revisi</button>` 
-                            : `<span class="text-muted small">No Action</span>`;
+                            ? `<button class="btn btn-sm btn-outline-warning" style="font-size:0.75rem;" onclick="alert('Fungsi Revisi: ID ${item.id_pengajuan}')">Revisi</button>` 
+                            : `<span style="font-size:0.75rem; color: var(--muted-foreground);">No Action</span>`;
 
-                        const linkSurat = item.file_surat ? `<a href="${BASE_HOST}${item.file_surat}" target="_blank" class="d-block mb-1 text-decoration-none small">📄 Surat Mhn.</a>` : '';
-                        const linkUKT = item.file_ukt ? `<a href="${BASE_HOST}${item.file_ukt}" target="_blank" class="d-block mb-1 text-decoration-none small">📄 Bukti UKT</a>` : '';
-                        const linkSK = item.file_sk ? `<a href="${BASE_HOST}${item.file_sk}" target="_blank" class="d-block text-decoration-none small">📄 SK Rektor</a>` : '';
+                        const linkSurat = item.file_surat ? `<a href="${BASE_HOST}${item.file_surat}" target="_blank" class="d-block mb-1 text-decoration-none" style="font-size:0.75rem; color:#60a5fa;">📄 Surat</a>` : '';
+                        const linkUKT = item.file_ukt ? `<a href="${BASE_HOST}${item.file_ukt}" target="_blank" class="d-block mb-1 text-decoration-none" style="font-size:0.75rem; color:#60a5fa;">📄 UKT</a>` : '';
+                        const linkSK = item.file_sk ? `<a href="${BASE_HOST}${item.file_sk}" target="_blank" class="d-block text-decoration-none" style="font-size:0.75rem; color:#60a5fa;">📄 SK</a>` : '';
                         
-                        const fileAkses = (linkSurat || linkUKT || linkSK) ? `${linkSurat}${linkUKT}${linkSK}` : `<span class="text-muted">-</span>`;
+                        const fileAkses = (linkSurat || linkUKT || linkSK) ? `${linkSurat}${linkUKT}${linkSK}` : `<span style="color: var(--muted-foreground);">-</span>`;
 
                         const row = `
                             <tr>
-                                <td class="fw-bold">${item.id_pengajuan}</td>
-                                <td>${item.nama} <br><small class="text-muted">${item.nim}</small></td>
-                                <td><small>${item.departemen}</small></td>
+                                <td class="fw-bold px-4" style="font-size:0.875rem;">${item.id_pengajuan}</td>
+                                <td><div style="font-size:0.875rem; font-weight:500;">${item.nama}</div><div style="font-size:0.75rem; color:var(--muted-foreground);">${item.nim}</div></td>
+                                <td style="font-size:0.875rem; color:var(--muted-foreground);">${item.departemen}</td>
                                 <td>${fileAkses}</td>
                                 <td>${statusBadge}</td>
-                                <td><small class="text-secondary text-wrap" style="min-width:180px; display:inline-block;">${item.catatan_petugas}</small></td>
-                                <td class="text-center">${btnAksi}</td>
+                                <td><div class="text-wrap" style="font-size:0.75rem; color:var(--muted-foreground); min-width:150px; line-height:1.4;">${item.catatan_petugas}</div></td>
+                                <td class="text-center px-4">${btnAksi}</td>
                             </tr>
                         `;
                         tbody.insertAdjacentHTML('beforeend', row);
                     });
                 } else {
-                    tbody.innerHTML = `<tr><td colspan="7" class="text-center py-5 text-muted">Belum ada riwayat pengajuan dokumen untuk ID ${studentId}.</td></tr>`;
+                    tbody.innerHTML = `<tr><td colspan="7" class="text-center py-5" style="color: var(--muted-foreground);">Belum ada riwayat pengajuan dokumen untuk ID ${studentId}.</td></tr>`;
                 }
             } catch (error) {
                 console.error(error);
                 document.getElementById('tabelRiwayat').innerHTML = `
-                    <tr><td colspan="7" class="text-center py-5 text-danger small">Gagal memuat data riwayat dari backend server.</td></tr>
+                    <tr><td colspan="7" class="text-center py-5 text-danger" style="font-size:0.875rem;">Gagal memuat data riwayat dari backend server.</td></tr>
                 `;
             }
         }
@@ -376,7 +582,7 @@
 
             try {
                 document.getElementById('btnSubmit').disabled = true;
-                document.getElementById('btnSubmit').innerText = '⏳ Mengirim Berkas...';
+                document.getElementById('btnSubmit').innerText = 'Mengirim...';
 
                 const response = await fetch(API_URL, {
                     method: 'POST',
@@ -393,8 +599,11 @@
                     document.getElementById('student_id').value = currentId;
                     
                     document.getElementById('status-app-letter').textContent = "Belum ada berkas terpilih";
+                    document.getElementById('status-app-letter').style.color = "#a1a1aa";
                     document.getElementById('status-ukt-receipt').textContent = "Belum ada berkas terpilih";
+                    document.getElementById('status-ukt-receipt').style.color = "#a1a1aa";
                     document.getElementById('status-rector-decree').textContent = "Belum ada berkas terpilih";
+                    document.getElementById('status-rector-decree').style.color = "#a1a1aa";
                     
                     await loadStatusRiwayat();
                     
@@ -402,7 +611,6 @@
                     modalRiwayat.show();
 
                 } else {
-                    // Menampilkan pesan error spesifik dari backend jika gagal (misal: error foreign key)
                     alert('Gagal menyimpan data ke database: ' + (resData.message || 'Error server'));
                 }
             } catch (error) {
@@ -410,7 +618,7 @@
                 alert('Gagal mengirim data. Pastikan server backend Anda berjalan.');
             } finally {
                 document.getElementById('btnSubmit').disabled = false;
-                document.getElementById('btnSubmit').innerText = '🚀 Kirim Permohonan';
+                document.getElementById('btnSubmit').innerText = 'Kirim Permohonan';
             }
         });
 
@@ -418,6 +626,21 @@
             initStudentID();
             loadStatusRiwayat();
         });
+
+        function handleLogout() {
+            const konfirmasi = confirm("Apakah Anda yakin ingin log out dari Dashboard INI?");
+            
+            if (konfirmasi) {
+
+                localStorage.clear();
+                sessionStorage.clear();
+
+                window.location.href = 'login.html'; 
+            }
+        }
+
+
+
     </script>
 </body>
 </html>

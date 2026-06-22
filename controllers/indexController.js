@@ -1,76 +1,109 @@
-  const bcrypt = require("bcryptjs");
-  const db = require("../lib/db");
+const bcrypt = require("bcryptjs");
+const db = require("../lib/db");
 
-  const index = (req, res) => {
-    res.render("index", { title: "Express" });
-  };
+const index = (req, res) => {
+  res.render("index", { title: "Express" });
+};
 
-  const home = (req, res) => {
-    res.render("home", { title: "Home", user: req.session.email });
-  };
+const home = (req, res) => {
+  res.render("home", { title: "Home", user: req.session.email });
+};
 
-  const loginPage = (req, res) => {
-    if (req.session.userId) {
-      const roles = req.session.roles || [];
-      if (roles.includes('admin')) return res.redirect("/dashboard");
-      return res.redirect("/home");
+const loginPage = (req, res) => {
+  if (req.session.userId) {
+    const roles = req.session.roles || [];
+    if (roles.includes('admin')) return res.redirect("/dashboard");
+    return res.redirect("/home");
+  }
+  res.render("login", { title: "Login", error: null });
+};
+
+const login = async (req, res, next) => {
+  const { email, password } = req.body;
+
+  try {
+    const [rows] = await db.query("SELECT * FROM users WHERE email = ?", [email]);
+
+    if (rows.length === 0) {
+      return res.render("login", { title: "Login", error: "Invalid email or password" });
     }
-    res.render("login", { title: "Login", error: null });
-  };
 
-  const login = async (req, res, next) => {
-    const { email, password } = req.body;
+    const user = rows[0];
+    const isMatch = await bcrypt.compare(password, user.password);
 
-    try {
-      const [rows] = await db.query("SELECT * FROM users WHERE email = ?", [email]);
+    if (!isMatch) {
+      return res.render("login", { title: "Login", error: "Invalid email or password" });
+    }
 
-      if (rows.length === 0) {
-        return res.render("login", { title: "Login", error: "Invalid email or password" });
-      }
+    req.session.userId = user.id;
+    req.session.email = user.email;
 
-      const user = rows[0];
-      const isMatch = await bcrypt.compare(password, user.password);
+    const [roleRows] = await db.query(`
+      SELECT r.name 
+      FROM roles r
+      JOIN model_has_roles mhr ON r.id = mhr.role_id
+      WHERE mhr.model_id = ?
+    `, [Number(user.id)]);
 
-      if (!isMatch) {
-        return res.render("login", { title: "Login", error: "Invalid email or password" });
-      }
+    const roles = roleRows.map(row => row.name.toLowerCase());
+    req.session.roles = roles;
 
-      req.session.userId = user.id;
-      req.session.email = user.email;
+    // Pengaturan durasi cookie session berdasarkan role
+    if (roles.includes('admin')) {
+      req.session.cookie.maxAge = 1000 * 60 * 60 * 2; 
+    } else if (roles.includes('dekan') || roles.includes('wd') || roles.includes('wd2')) {
+      req.session.cookie.maxAge = 1000 * 60 * 15;     
+    } else {
+      req.session.cookie.maxAge = 1000 * 60 * 60 * 1; 
+    }
 
-      const [roleRows] = await db.query(`
-        SELECT r.name 
-        FROM roles r
-        JOIN model_has_roles mhr ON r.id = mhr.role_id
-        WHERE mhr.model_id = ?
-      `, [Number(user.id)]);
+    // ====================================================================
+    // 1. KONDISI UNTUK WD2 / WD -> LANGSUNG KE wd2.html
+    // ====================================================================
+    if (roles.includes('wd2') || roles.includes('wd')) {
+      return res.redirect("/wd2.html"); 
+    }
 
-      const roles = roleRows.map(row => row.name.toLowerCase());
-      req.session.roles = roles;
+    // ====================================================================
+    // 2. KONDISI UNTUK MAHASISWA -> LANGSUNG KE mahasiswa.html
+    // ====================================================================
+    if (roles.includes('mahasiswa')) {
+      const [studentRows] = await db.query(
+        "SELECT id, name, regno, department_id FROM students WHERE email = ? OR campus_email = ?", 
+        [user.email, user.email]
+      );
 
-      if (roles.includes('admin')) {
-        req.session.cookie.maxAge = 1000 * 60 * 60 * 2;
-      } else if (roles.includes('dekan') || roles.includes('wd')) {
-        req.session.cookie.maxAge = 1000 * 60 * 15;
+      if (studentRows.length > 0) {
+        req.session.studentId = studentRows[0].id;
+        req.session.studentName = studentRows[0].name;
+        req.session.studentNim = studentRows[0].regno;
+        req.session.departmentId = studentRows[0].department_id;
       } else {
-        req.session.cookie.maxAge = 1000 * 60 * 60 * 1;
+        console.log(`⚠️ Peringatan: Akun ${user.email} tidak ditemukan di tabel 'students'.`);
       }
-
-      if (roles.includes('admin')) {
-        return res.redirect("/dashboard");
-      }
-      return res.redirect("/home");
-
-    } catch (err) {
-      next(err);
+      
+      return res.redirect("/mahasiswa.html"); 
     }
-  };
 
-  const logout = (req, res, next) => {
-    req.session.destroy((err) => {
-      if (err) return next(err);
-      res.redirect("/login");
-    });
-  };
+    // ====================================================================
+    // 3. KONDISI UNTUK ADMIN
+    // ====================================================================
+    if (roles.includes('admin')) {
+      return res.redirect("/dashboard");
+    }
 
-  module.exports = { index, home, loginPage, login, logout };
+    return res.redirect("/home");
+
+  } catch (err) {
+    next(err);
+  }
+};
+
+const logout = (req, res, next) => {
+  req.session.destroy((err) => {
+    if (err) return next(err);
+    res.redirect("/login");
+  });
+};
+
+module.exports = { index, home, loginPage, login, logout };

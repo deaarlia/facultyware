@@ -8,125 +8,301 @@
     <link rel="stylesheet" href="assets/basecoat.min.css">
     
     <style>
+        :root {
+            --background: #09090b;
+            --foreground: #fafafa;
+            --border: #27272a;
+            --card: #09090b;
+            --muted: #27272a;
+            --muted-foreground: #a1a1aa;
+            --primary: #fafafa;
+            --primary-foreground: #18181b;
+            --radius: 0.5rem;
+            --danger: #ef4444;
+        }
+
         body { 
             font-family: system-ui, -apple-system, sans-serif; 
-            padding: 24px; 
-            background: #f8f9fa; 
-            color: #18181b; 
+            background: var(--background); 
+            color: var(--foreground); 
             margin: 0;
+            display: flex;
+            height: 100vh;
+            overflow: hidden;
         }
-        .container-fluid { width: 100%; max-width: 96%; margin: 0 auto; }
-        .top-bar { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #e4e4e7; padding-bottom: 20px; margin-bottom: 24px; }
-        .header-title h1 { margin: 0; font-size: 26px; color: #16a34a; font-weight: 700; tracking-tight: -0.025em; }
-        .header-title p { margin: 4px 0 0 0; color: #71717a; font-size: 14px; }
-        .account-badge { background: #ffffff; padding: 12px 16px; border-radius: 8px; border: 1px solid #e4e4e7; box-shadow: 0 1px 2px rgba(0,0,0,0.02); text-align: right; }
-        .account-badge p { margin: 0; font-size: 13px; }
+
+        /* --- SIDEBAR LAYOUT --- */
+        .sidebar {
+            width: 260px;
+            border-right: 1px solid var(--border);
+            display: flex;
+            flex-direction: column;
+            padding: 24px 16px;
+            background-color: var(--background);
+            flex-shrink: 0;
+        }
+
+        .sidebar-brand {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 0 8px 32px 8px;
+            font-weight: 700;
+            font-size: 16px;
+            color: var(--foreground);
+        }
+
+        .sidebar-brand div {
+            width: 20px;
+            height: 20px;
+            background-color: var(--foreground);
+            border-radius: 4px;
+        }
+
+        .sidebar-nav {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+            flex: 1;
+        }
+
+        .nav-header {
+            font-size: 11px; 
+            font-weight: 600; 
+            color: var(--muted-foreground); 
+            margin-bottom: 8px; 
+            padding-left: 12px; 
+            text-transform: uppercase; 
+            letter-spacing: 0.05em;
+        }
+
+        .nav-item {
+            padding: 10px 12px;
+            border-radius: 6px;
+            color: var(--muted-foreground);
+            text-decoration: none;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: background 0.2s, color 0.2s;
+        }
+
+        .nav-item.active {
+            background-color: var(--muted);
+            color: var(--foreground);
+        }
+
+        .nav-item:hover:not(.active) {
+            background-color: rgba(39, 39, 42, 0.5);
+            color: var(--foreground);
+        }
+
+        /* --- USER PROFILE & LOGOUT --- */
+        .sidebar-footer {
+            margin-top: auto;
+            border-top: 1px solid var(--border);
+            padding-top: 16px;
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+
+        .user-info {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 0 8px;
+        }
+
+        .avatar {
+            width: 32px;
+            height: 32px;
+            background-color: var(--muted);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--muted-foreground);
+        }
+
+        .user-details h4 { margin: 0; font-size: 13px; font-weight: 600; color: var(--foreground); }
+        .user-details p { margin: 2px 0 0 0; font-size: 11px; color: var(--muted-foreground); }
+
+        .btn-logout {
+            background: transparent;
+            border: 1px solid rgba(239, 68, 68, 0.3); 
+            color: var(--danger);
+            cursor: pointer;
+            padding: 8px;
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            font-size: 13px;
+            font-weight: 500;
+            transition: all 0.2s;
+            width: 100%;
+        }
+
+        .btn-logout:hover {
+            background-color: rgba(239, 68, 68, 0.1);
+        }
+
+        /* --- MAIN CONTENT --- */
+        .main-content { 
+            flex: 1; 
+            padding: 40px 48px; 
+            overflow-y: auto; 
+        }
+        
+        /* Modified to fit the screen */
+        .main-container { 
+            width: 100%; 
+            max-width: 100%; 
+            margin: 0; 
+        }
+
+        .header-title { margin-bottom: 32px; }
+        .header-title h1 { margin: 0; font-size: 26px; font-weight: 700; letter-spacing: -0.025em; color: var(--foreground); }
+        .header-title p { margin: 8px 0 0 0; color: var(--muted-foreground); font-size: 14px; }
 
         /* KARTU STATISTIK RINGKAS */
-        .stats-grid { display: flex; gap: 16px; margin-bottom: 24px; }
-        .stat-card { flex: 1; background: #ffffff; padding: 20px; border-radius: 8px; border: 1px solid #e4e4e7; box-shadow: 0 1px 3px rgba(0,0,0,0.02); }
-        .stat-card h4 { margin: 0 0 6px 0; font-size: 12px; color: #71717a; text-transform: uppercase; letter-spacing: 0.05em; font-weight: 600; }
-        .stat-card p { margin: 0; font-size: 24px; font-weight: 700; color: #18181b; }
+        .stats-grid { display: flex; gap: 16px; margin-bottom: 32px; }
+        .stat-card { flex: 1; background: var(--card); padding: 24px; border-radius: var(--radius); border: 1px solid var(--border); }
+        .stat-card h4 { margin: 0 0 8px 0; font-size: 13px; color: var(--muted-foreground); font-weight: 500; }
+        .stat-card p { margin: 0; font-size: 28px; font-weight: 700; color: var(--foreground); }
 
         /* KARTU TABEL */
-        .card { background: #ffffff; padding: 24px; border-radius: 8px; border: 1px solid #e4e4e7; box-shadow: 0 1px 3px rgba(0,0,0,0.02); }
-        .card-header-wrapper { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
-        .card-title { margin: 0; font-size: 18px; font-weight: 600; color: #18181b; }
+        .card { background: var(--card); padding: 24px; border-radius: var(--radius); border: 1px solid var(--border); }
+        .card-header-wrapper { display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; }
+        .card-title { margin: 0; font-size: 16px; font-weight: 600; color: var(--foreground); }
 
         /* BUTTON EKSPOR MODERN */
         .btn-export {
-            background-color: #2563eb; color: white; border: none; padding: 10px 16px; border-radius: 6px; font-size: 13px; font-weight: 600; cursor: pointer; display: inline-flex; align-items: center; gap: 8px; transition: background 0.2s; box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+            background-color: var(--primary); color: var(--primary-foreground); border: none; padding: 10px 16px; border-radius: 6px; font-size: 13px; font-weight: 600; cursor: pointer; display: inline-flex; align-items: center; gap: 8px; transition: opacity 0.2s;
         }
-        .btn-export:hover { background-color: #1d4ed8; }
+        .btn-export:hover { opacity: 0.9; }
 
         /* BUTTON AKSI MODERN */
         .btn-action-approve {
-            background-color: #16a34a; color: white; border: none; padding: 6px 14px; border-radius: 6px; font-size: 12px; font-weight: 600; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; transition: background 0.2s;
+            background-color: transparent; color: #4ade80; border: 1px solid rgba(74, 222, 128, 0.3); padding: 6px 14px; border-radius: 6px; font-size: 12px; font-weight: 500; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; transition: all 0.2s;
         }
-        .btn-action-approve:hover { background-color: #15803d; }
+        .btn-action-approve:hover { background-color: rgba(74, 222, 128, 0.1); border-color: #4ade80; }
 
         .btn-action-reject {
-            background-color: #dc2626; color: white; border: none; padding: 6px 14px; border-radius: 6px; font-size: 12px; font-weight: 600; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; transition: background 0.2s;
+            background-color: transparent; color: #f87171; border: 1px solid rgba(248, 113, 113, 0.3); padding: 6px 14px; border-radius: 6px; font-size: 12px; font-weight: 500; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; transition: all 0.2s;
         }
-        .btn-action-reject:hover { background-color: #b91c1c; }
+        .btn-action-reject:hover { background-color: rgba(248, 113, 113, 0.1); border-color: #f87171; }
 
         /* MODAL DIALOG */
-        .modal { display: none; position: fixed; z-index: 100; left: 0; top: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.4); align-items: center; justify-content: center; backdrop-filter: blur(2px); }
-        .modal-content { background: white; padding: 24px; border-radius: 8px; width: 440px; border: 1px solid #e4e4e7; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1); }
-        .form-control { width: 100%; padding: 10px; border: 1px solid #e4e4e7; border-radius: 6px; box-sizing: border-box; font-size: 14px; margin-top: 8px; margin-bottom: 20px; font-family: inherit; }
-        .form-control:focus { outline: 2px solid #16a34a; border-color: transparent; }
+        .modal { display: none; position: fixed; z-index: 100; left: 0; top: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); align-items: center; justify-content: center; backdrop-filter: blur(4px); }
+        .modal-content { background: var(--background); padding: 24px; border-radius: var(--radius); width: 440px; border: 1px solid var(--border); }
+        .form-control { width: 100%; padding: 10px; border: 1px solid var(--border); border-radius: 6px; box-sizing: border-box; font-size: 14px; margin-top: 8px; margin-bottom: 20px; font-family: inherit; background: transparent; color: var(--foreground); }
+        .form-control:focus { outline: none; border-color: var(--muted-foreground); }
         .modal-buttons { display: flex; justify-content: flex-end; gap: 10px; }
+        
+        .btn-modal-cancel { background: transparent; color: var(--foreground); border: 1px solid var(--border); padding: 8px 14px; border-radius: 6px; cursor: pointer; font-size: 13px; font-weight: 500; transition: background 0.2s;}
+        .btn-modal-cancel:hover { background: var(--muted); }
     </style>
 </head>
 <body>
 
-    <div class="container-fluid">
+    <aside class="sidebar">
+        <div class="sidebar-brand">
+            <div></div>
+            <span>Sistem UKT</span>
+        </div>
         
-        <div class="top-bar">
+        <div class="sidebar-nav">
+            <span class="nav-header">Menu Utama</span>
+            <div class="nav-item active">Kelola Pengembalian UKT</div>
+        </div>
+
+        <div class="sidebar-footer">
+            <div class="user-info">
+                <div class="avatar">BS</div>
+                <div class="user-details">
+                    <h4>Dr. Budi Santoso</h4>
+                    <p>Dashboard WD II</p>
+                </div>
+            </div>
+            <button class="btn-logout" title="Logout" onclick="handleLogout()">
+                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+                Log out
+            </button>
+        </div>
+    </aside>
+
+    <main class="main-content">
+        <div class="main-container">
+            
             <div class="header-title">
-                <h1>Form Pengembalian UKT Mahasiswa</h1>
-                <p>Persetujuan & Validasi Akhir Dana Pengembalian UKT</p>
+                <h1>Persetujuan Pengembalian UKT</h1>
+                <p>Validasi akhir dana pengembalian UKT mahasiswa tingkat Fakultas.</p>
             </div>
-            <div class="account-badge">
-                <p><strong>Jabatan:</strong> Wakil Dekan II</p>
-                <p style="color: #71717a; margin-top: 2px; font-weight: 500;">Dr. Budi Santoso, M.Si.</p>
-            </div>
-        </div>
 
-        <div class="stats-grid">
-            <div class="stat-card" style="border-left: 4px solid #f59e0b;">
-                <h4>Perlu Review WD2 (Lvl 1)</h4>
-                <p id="count-pending">0 Permohonan</p>
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <h4>Perlu Review WD2 (Lvl 1)</h4>
+                    <p id="count-pending">0</p>
+                </div>
+                <div class="stat-card">
+                    <h4>Total Selesai (Lvl 2)</h4>
+                    <p id="count-approved">0</p>
+                </div>
             </div>
-            <div class="stat-card" style="border-left: 4px solid #16a34a;">
-                <h4>Total Permohonan Selesai (Lvl 2)</h4>
-                <p id="count-approved">0 Permohonan</p>
-            </div>
-        </div>
 
-        <div class="card">
-            <div class="card-header-wrapper">
-                <h3 class="card-title">Daftar Antrean Persetujuan Pengembalian UKT</h3>
-                <button type="button" class="btn-export" onclick="eksporLaporanAkhir()">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-                    Ekspor Laporan Akhir
-                </button>
+            <div class="card">
+                <div class="card-header-wrapper">
+                    <div>
+                        <h3 class="card-title">Daftar Antrean</h3>
+                        <p style="margin: 4px 0 0 0; font-size: 13px; color: var(--muted-foreground);">Daftar mahasiswa yang menunggu validasi.</p>
+                    </div>
+                    <button type="button" class="btn-export" onclick="eksporLaporanAkhir()">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2-2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                        Ekspor Laporan
+                    </button>
+                </div>
+                
+                <div style="overflow-x: auto; width: 100%;">
+                    <table style="width: 100%; border-collapse: collapse; text-align: left; font-size: 14px;">
+                        <thead>
+                            <tr style="border-bottom: 1px solid var(--border);">
+                                <th style="padding: 12px 16px; font-weight: 500; color: var(--muted-foreground); width: 8px;">ID</th>
+                                <th style="padding: 12px 16px; font-weight: 500; color: var(--muted-foreground); width: 25%;">Nama / NIM</th>
+                                <th style="padding: 12px 16px; font-weight: 500; color: var(--muted-foreground); width: 20%;">Departemen</th>
+                                <th style="padding: 12px 16px; font-weight: 500; color: var(--muted-foreground); width: 20%;">Berkas Lampiran</th>
+                                <th style="padding: 12px 16px; font-weight: 500; color: var(--muted-foreground); width: 17%;">Status Sistem</th>
+                                <th style="padding: 12px 16px; font-weight: 500; color: var(--muted-foreground); width: 15%;">Aksi Keputusan</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tbodyWD2">
+                            <tr style="border-bottom: 1px solid var(--border);">
+                                <td colspan="6" style="padding: 32px; text-align: center; color: var(--muted-foreground);">Memuat berkas antrean...</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
             </div>
             
-            <div style="overflow-x: auto; width: 100%;">
-                <table style="width: 100%; border-collapse: collapse; text-align: left; font-size: 14px;">
-                    <thead>
-                        <tr style="border-bottom: 1px solid #e4e4e7;">
-                            <th style="padding: 12px 16px; font-weight: 500; color: #71717a; width: 8px;">ID</th>
-                            <th style="padding: 12px 16px; font-weight: 500; color: #71717a; width: 25%;">Nama / NIM</th>
-                            <th style="padding: 12px 16px; font-weight: 500; color: #71717a; width: 20%;">Departemen</th>
-                            <th style="padding: 12px 16px; font-weight: 500; color: #71717a; width: 20%;">Berkas Lampiran</th>
-                            <th style="padding: 12px 16px; font-weight: 500; color: #71717a; width: 17%;">Status Sistem</th>
-                            <th style="padding: 12px 16px; font-weight: 500; color: #71717a; width: 15%;">Aksi Keputusan</th>
-                        </tr>
-                    </thead>
-                    <tbody id="tbodyWD2">
-                        <tr style="border-bottom: 1px solid #e4e4e7;">
-                            <td colspan="6" style="padding: 32px; text-align: center; color: #a1a1aa;">Memuat berkas antrean...</td>
-                        </tr>
-                    </tbody>
-                </table>
-            </div>
         </div>
-    </div>
+    </main>
 
     <div id="reviewModal" class="modal">
         <div class="modal-content">
-            <h3 style="margin-top:0; font-size:18px; font-weight:600;" id="modalTitle">Beri Catatan Review</h3>
+            <h3 style="margin-top:0; font-size:18px; font-weight:600; color: var(--foreground);" id="modalTitle">Beri Catatan Review</h3>
             <input type="hidden" id="modalIdPengajuan">
             <input type="hidden" id="modalActionType">
             
-            <label style="font-size:13px; font-weight:600; color:#3f3f46;">Tulis Catatan / Alasan:</label>
-            <textarea id="modalCatatan" class="form-control" rows="3" placeholder="Contoh: Berkas sesuai, disetujui pencairan."></textarea>
+            <label style="font-size:13px; font-weight:500; color: var(--muted-foreground);">Tulis Catatan / Alasan:</label>
+            <textarea id="modalCatatan" class="form-control" rows="3" placeholder="Ketik pesan Anda di sini..."></textarea>
             
             <div class="modal-buttons">
-                <button type="button" onclick="closeModal()" style="background:#f4f4f5; border:1px solid #e4e4e7; padding:8px 14px; border-radius:6px; cursor:pointer; font-size:13px; font-weight:500;">Batal</button>
-                <button type="button" id="btnModalSubmit" onclick="submitReview()" style="background:#2563eb; color:white; border:none; padding:8px 14px; border-radius:6px; cursor:pointer; font-size:13px; font-weight:600;">Simpan Keputusan</button>
+                <button type="button" class="btn-modal-cancel" onclick="closeModal()">Batal</button>
+                <button type="button" id="btnModalSubmit" onclick="submitReview()" style="background:var(--primary); color:var(--primary-foreground); border:none; padding:8px 14px; border-radius:6px; cursor:pointer; font-size:13px; font-weight:600;">Simpan</button>
             </div>
         </div>
     </div>
@@ -143,7 +319,7 @@ async function loadAntreanWD2() {
         tbody.innerHTML = '';
 
         if (!resData.success || !resData.data || resData.data.length === 0) {
-            tbody.innerHTML = `<tr><td colspan="6" style="padding: 32px; text-align: center; color: #a1a1aa; font-size: 14px;">Tidak ada antrean persetujuan saat ini.</td></tr>`;
+            tbody.innerHTML = `<tr><td colspan="6" style="padding: 32px; text-align: center; color: var(--muted-foreground); font-size: 14px;">Tidak ada antrean persetujuan saat ini.</td></tr>`;
             return;
         }
 
@@ -151,92 +327,81 @@ async function loadAntreanWD2() {
         let approvedCount = 0;
 
         resData.data.forEach(item => {
-            const statusSistem = item.status_sistem || "Menunggu Validasi Admin";
-            const namaMahasiswa = item.nama_mahasiswa || item.nama || "Mahasiswa";
-            const nimMahasiswa = item.nim || "-";
-            const departemen = item.departemen || item.id_departemen || "-";
-            const lvl = Number(item.level);
+            const idPengajuan = item.id || item.request_id || item.id_pengajuan || "-";
+            const statusSistem = item.status_sistem || item.status || "Menunggu Validasi";
+            const namaMahasiswa = item.nama_mahasiswa || item.nama || item.name || "Mahasiswa";
+            const nimMahasiswa = item.nim || item.student_id || "-";
+            const departemen = item.departemen || item.department || item.id_departemen || "-";
+            const lvl = Number(item.level || item.approval_level || 0);
 
-            // HITUNG STATISTIK BERDASARKAN ATURAN LEVEL BARU
-            if (lvl === 1) {
-                pendingCount++; // Hanya lvl 1 yang perlu tindakan WD 2
-            }
-            if (lvl === 2) {
-                approvedCount++; // lvl 2 masuk ke counter selesai
-            }
+            const fileAppLetter = item.appLetter || item.app_letter || item.surat_permohonan;
+            const fileUktReceipt = item.uktReceipt || item.ukt_receipt || item.bukti_bayar;
+            const fileRectorDecree = item.rectorDecree || item.rector_decree || item.sk_rektor;
+
+            if (lvl === 1) { pendingCount++; }
+            if (lvl === 2) { approvedCount++; }
             
-            // WARNA BADGE BERDASARKAN LEVEL DAN STATUS SYSTEM
-            let badgeStyle = "padding: 6px 12px; border-radius: 9999px; font-size: 11px; font-weight: 600; display: inline-flex; align-items: center; white-space: nowrap;";
-            if (statusSistem.includes('Ditolak')) {
-                badgeStyle += " background-color: #dc2626; color: #ffffff;";
+            let badgeStyle = "padding: 4px 10px; border-radius: 9999px; font-size: 11px; font-weight: 500; display: inline-flex; align-items: center; white-space: nowrap; border: 1px solid;";
+            if (statusSistem.toLowerCase().includes('tolak') || statusSistem.toLowerCase().includes('reject')) {
+                badgeStyle += " background-color: rgba(248, 113, 113, 0.1); color: #f87171; border-color: rgba(248, 113, 113, 0.2);";
             } else if (lvl === 2) {
-                badgeStyle += " background-color: #16a34a; color: #ffffff;";
+                badgeStyle += " background-color: rgba(74, 222, 128, 0.1); color: #4ade80; border-color: rgba(74, 222, 128, 0.2);";
             } else if (lvl === 1) {
-                badgeStyle += " background-color: #f59e0b; color: #ffffff;"; // Lvl 1: Amber/Kuning
+                badgeStyle += " background-color: rgba(250, 204, 21, 0.1); color: #facc15; border-color: rgba(250, 204, 21, 0.2);"; 
             } else {
-                badgeStyle += " background-color: #71717a; color: #ffffff;"; // Lvl 0: Abu-abu (Menunggu Admin)
+                badgeStyle += " background-color: var(--muted); color: var(--muted-foreground); border-color: var(--border);"; 
             }
 
             let berkasHTML = `<div style="display: flex; flex-direction: column; gap: 6px; font-size: 12px; width: 100%; max-width: 180px;">`;
-            const btnFileStyle = "background-color: #2563eb; color: white; text-decoration: none; padding: 6px 12px; border-radius: 6px; font-size: 12px; font-weight: 500; display: inline-flex; align-items: center; justify-content: center; gap: 6px; transition: background 0.2s; border: none; cursor: pointer; width: 100%; box-sizing: border-box;";
-            const eyeIconSVG = `<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg> `;
+            const btnFileStyle = "background-color: var(--muted); color: var(--foreground); text-decoration: none; padding: 6px 12px; border-radius: 6px; font-size: 12px; font-weight: 500; display: inline-flex; align-items: center; justify-content: center; gap: 6px; transition: background 0.2s; border: 1px solid var(--border); cursor: pointer; width: 100%; box-sizing: border-box;";
+            const eyeIconSVG = `<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg> `;
 
-            if (item.appLetter) {
-                berkasHTML += `
-                    <a href="${BACKEND_URL}/uploads/${item.appLetter}" target="_blank" class="btn-file-view" style="${btnFileStyle}" onmouseover="this.style.backgroundColor='#1d4ed8'" onmouseout="this.style.backgroundColor='#2563eb'">
-                        ${eyeIconSVG} Surat Permohonan
-                    </a>`;
+            if (fileAppLetter) {
+                berkasHTML += `<a href="${BACKEND_URL}/uploads/${fileAppLetter}" target="_blank" class="btn-file-view" style="${btnFileStyle}" onmouseover="this.style.backgroundColor='rgba(39, 39, 42, 0.8)'" onmouseout="this.style.backgroundColor='var(--muted)'">${eyeIconSVG} Surat Permohonan</a>`;
             }
-            if (item.uktReceipt) {
-                berkasHTML += `
-                    <a href="${BACKEND_URL}/uploads/${item.uktReceipt}" target="_blank" class="btn-file-view" style="${btnFileStyle}" onmouseover="this.style.backgroundColor='#1d4ed8'" onmouseout="this.style.backgroundColor='#2563eb'">
-                        ${eyeIconSVG} Bukti Bayar
-                    </a>`;
+            if (fileUktReceipt) {
+                berkasHTML += `<a href="${BACKEND_URL}/uploads/${fileUktReceipt}" target="_blank" class="btn-file-view" style="${btnFileStyle}" onmouseover="this.style.backgroundColor='rgba(39, 39, 42, 0.8)'" onmouseout="this.style.backgroundColor='var(--muted)'">${eyeIconSVG} Bukti Bayar</a>`;
             }
-            if (item.rectorDecree) {
-                berkasHTML += `
-                    <a href="${BACKEND_URL}/uploads/${item.rectorDecree}" target="_blank" class="btn-file-view" style="${btnFileStyle}" onmouseover="this.style.backgroundColor='#1d4ed8'" onmouseout="this.style.backgroundColor='#2563eb'">
-                        ${eyeIconSVG} SK Rektorat
-                    </a>`;
+            if (fileRectorDecree) {
+                berkasHTML += `<a href="${BACKEND_URL}/uploads/${fileRectorDecree}" target="_blank" class="btn-file-view" style="${btnFileStyle}" onmouseover="this.style.backgroundColor='rgba(39, 39, 42, 0.8)'" onmouseout="this.style.backgroundColor='var(--muted)'">${eyeIconSVG} SK Rektorat</a>`;
             }
-            if (!item.appLetter && !item.uktReceipt && !item.rectorDecree) {
-                berkasHTML += `<span style="color: #a1a1aa; font-style: italic; text-align: center; padding: 4px 0;">Tidak ada berkas</span>`;
+            if (!fileAppLetter && !fileUktReceipt && !fileRectorDecree) {
+                berkasHTML += `<span style="color: var(--muted-foreground); font-style: italic; text-align: center; padding: 4px 0;">Tidak ada berkas</span>`;
             }
             berkasHTML += `</div>`;
 
-            // LOGIKA AKSI KEPUTUSAN WD 2 BERDASARKAN STRUKTUR LEVEL BARU (0, 1, 2)
             let aksiHTML = '';
             if (lvl === 0) {
-                aksiHTML = `<span style="font-size: 12px; color: #71717a; font-style: italic; font-weight: 500;">Terkunci / Hak Akses Admin</span>`;
+                aksiHTML = `<span style="font-size: 12px; color: var(--muted-foreground); font-weight: 500;">Menunggu Admin</span>`;
             } else if (lvl === 1) {
                 aksiHTML = `
                     <div style="display: flex; gap: 8px;">
-                        <button type="button" class="btn-action-approve" onclick="openReviewModal('${item.id}', 'setuju')">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                        <button type="button" class="btn-action-approve" onclick="openReviewModal('${idPengajuan}', 'setuju')">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
                             Setuju
                         </button>
-                        <button type="button" class="btn-action-reject" onclick="openReviewModal('${item.id}', 'tolak')">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                        <button type="button" class="btn-action-reject" onclick="openReviewModal('${idPengajuan}', 'tolak')">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
                             Tolak
                         </button>
                     </div>
                 `;
             } else if (lvl === 2) {
-                if (statusSistem.includes('Ditolak')) {
-                    aksiHTML = `<span style="font-size: 12px; color: #dc2626; font-weight: 600;">Selesai (Ditolak)</span>`;
+                if (statusSistem.toLowerCase().includes('tolak') || statusSistem.toLowerCase().includes('reject')) {
+                    aksiHTML = `<span style="font-size: 12px; color: #f87171; font-weight: 500;">Selesai (Ditolak)</span>`;
                 } else {
-                    aksiHTML = `<span style="font-size: 12px; color: #16a34a; font-weight: 600;">Selesai (Disetujui)</span>`;
+                    aksiHTML = `<span style="font-size: 12px; color: #4ade80; font-weight: 500;">Selesai (Disetujui)</span>`;
                 }
             }
 
             tbody.innerHTML += `
-                <tr style="border-bottom: 1px solid #e4e4e7;" onmouseover="this.style.backgroundColor='#fafafa'" onmouseout="this.style.backgroundColor='transparent'">
-                    <td style="padding: 14px 16px; font-weight: 600; color: #18181b;">${item.id}</td>
+                <tr style="border-bottom: 1px solid var(--border); transition: background 0.2s;" onmouseover="this.style.backgroundColor='var(--muted)'" onmouseout="this.style.backgroundColor='transparent'">
+                    <td style="padding: 14px 16px; font-weight: 500; color: var(--muted-foreground);">${idPengajuan}</td>
                     <td style="padding: 14px 16px;">
-                        <div style="font-weight: 500; color: #18181b;">${namaMahasiswa}</div>
-                        <div style="font-size: 12px; color: #71717a; margin-top: 2px;">NIM: ${nimMahasiswa}</div>
+                        <div style="font-weight: 500; color: var(--foreground);">${namaMahasiswa}</div>
+                        <div style="font-size: 12px; color: var(--muted-foreground); margin-top: 2px;">NIM: ${nimMahasiswa}</div>
                     </td>
-                    <td style="padding: 14px 16px; color: #3f3f46;">${departemen}</td>
+                    <td style="padding: 14px 16px; color: var(--muted-foreground);">${departemen}</td>
                     <td style="padding: 14px 16px;">${berkasHTML}</td>
                     <td style="padding: 14px 16px;">
                         <span style="${badgeStyle}">${statusSistem}</span>
@@ -246,12 +411,12 @@ async function loadAntreanWD2() {
             `;
         });
 
-        document.getElementById('count-pending').innerText = `${pendingCount} Permohonan`;
-        document.getElementById('count-approved').innerText = `${approvedCount} Permohonan`;
+        document.getElementById('count-pending').innerText = `${pendingCount}`;
+        document.getElementById('count-approved').innerText = `${approvedCount}`;
 
     } catch (error) {
         console.error("Gagal memuat antrean WD2:", error);
-        document.getElementById('tbodyWD2').innerHTML = `<tr><td colspan="6" style="padding: 32px; text-align: center; color: #dc2626; font-weight: 500;">Terjadi kesalahan koneksi saat mengambil data dari server.</td></tr>`;
+        document.getElementById('tbodyWD2').innerHTML = `<tr><td colspan="6" style="padding: 32px; text-align: center; color: #f87171; font-weight: 500;">Terjadi kesalahan koneksi saat mengambil data dari server.</td></tr>`;
     }
 }
 
@@ -275,14 +440,29 @@ async function eksporLaporanAkhir() {
         csvRows.push(headers.join(","));
 
         resData.data.forEach(item => {
-            let statusTeks = item.Status_Akhir === 2 ? "Disetujui Wakil Dekan 2" : "Ditolak";
+            const statusLvl = Number(item.status_akhir || item.Status_Akhir || item.level || 0);
+            const statusSistem = (item.status_sistem || item.status || "").toLowerCase();
             
-            const namaAman = `"${(item.Nama_Mahasiswa || '').replace(/"/g, '""')}"`;
-            const deptAman = `"${(item.Departemen || '-').replace(/"/g, '""')}"`;
-            const tanggalFormat = item.Tanggal_Keputusan ? new Date(item.Tanggal_Keputusan).toLocaleDateString('id-ID') : '-';
+            let statusTeks = "Disetujui Wakil Dekan 2";
+            if(statusSistem.includes('tolak') || statusSistem.includes('reject')) {
+                 statusTeks = "Ditolak";
+            } else if (statusLvl !== 2) {
+                 statusTeks = "Menunggu Proses";
+            }
+            
+            const rawNama = item.nama_mahasiswa || item.Nama_Mahasiswa || item.nama || item.name || '';
+            const namaAman = `"${rawNama.replace(/"/g, '""')}"`;
+            
+            const rawDept = item.departemen || item.Departemen || item.department || '-';
+            const deptAman = `"${rawDept.replace(/"/g, '""')}"`;
+            
+            const rawDate = item.tanggal_keputusan || item.Tanggal_Keputusan || item.updated_at;
+            const tanggalFormat = rawDate ? new Date(rawDate).toLocaleDateString('id-ID') : '-';
+            
+            const nimMhs = item.nim || item.NIM || item.student_id || "-";
 
             const row = [
-                item.NIM,
+                nimMhs,
                 namaAman,
                 deptAman,
                 statusTeks,
@@ -315,11 +495,13 @@ function openReviewModal(id, action) {
     
     if(action === 'setuju') {
         document.getElementById('modalTitle').innerText = `Setujui Permohonan #${id}`;
-        document.getElementById('btnModalSubmit').style.backgroundColor = "#16a34a";
+        document.getElementById('btnModalSubmit').style.background = "var(--primary)";
+        document.getElementById('btnModalSubmit').style.color = "var(--primary-foreground)";
         document.getElementById('btnModalSubmit').innerText = "Setujui & Proses";
     } else {
         document.getElementById('modalTitle').innerText = `Tolak Permohonan #${id}`;
-        document.getElementById('btnModalSubmit').style.backgroundColor = "#dc2626";
+        document.getElementById('btnModalSubmit').style.background = "#ef4444";
+        document.getElementById('btnModalSubmit').style.color = "white";
         document.getElementById('btnModalSubmit').innerText = "Tolak Permohonan";
     }
     document.getElementById('reviewModal').style.display = 'flex';
@@ -361,6 +543,19 @@ async function submitReview() {
         }
     } catch (error) {
         alert("Terjadi masalah jaringan server.");
+    }
+}
+
+
+function handleLogout() {
+    const konfirmasi = confirm("Apakah Anda yakin ingin log out dari Dashboard WD II?");
+    
+    if (konfirmasi) {
+
+        localStorage.clear();
+        sessionStorage.clear();
+
+        window.location.href = 'login.html'; 
     }
 }
 
