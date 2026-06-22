@@ -6,7 +6,6 @@
   ];
   pageScript  = '/javascripts/admin/detail-permohonan.js';
   
-  // Status banner safely mapped
   const statusMap = {
     pending:  { label: 'Menunggu Verifikasi Admin', color: '#f59e0b' },
     approved: { label: 'Disetujui Admin (Tahap 1)', color: '#22c55e' },
@@ -20,21 +19,17 @@
     : 'revision';
   const si = statusMap[statusKey] || statusMap.pending;
 
-  // Safe checks untuk variabel dari controller
   const hasWd2Acted = typeof wd2HasActed !== 'undefined' && wd2HasActed;
   const safeApprovals = Array.isArray(approvals) ? approvals : [];
 
-  // Format helpers
   const fmtDate = (d, opts) => d
     ? new Date(d).toLocaleDateString('id-ID', opts || { day: '2-digit', month: 'short', year: 'numeric' })
     : '—';
     
-  // Format nominal aman jika nilainya 0
   const fmtNominal = n => (n !== undefined && n !== null && n !== '') 
     ? 'Rp ' + parseInt(n).toLocaleString('id-ID') 
     : '—';
 
-  // File dokumen
   const docFiles = [
     { label: 'Surat Permohonan',        value: permohonan.application_letter_file },
     { label: 'Kwitansi Pembayaran UKT', value: permohonan.ukt_payment_receipt_file },
@@ -176,6 +171,13 @@
       </div>
       <p id="modal-desc" class="text-sm mb-4 text-muted"></p>
       <input type="hidden" id="inp-status" />
+      <div id="nominal-field" class="grid gap-1.5 mb-4" hidden>
+        <label for="inp-nominal" class="text-sm font-medium">
+          Nominal Pengembalian (Rp) <span class="text-xs font-normal text-destructive">*wajib</span>
+        </label>
+        <input type="number" id="inp-nominal" class="input" placeholder="Contoh: 3500000" min="0" />
+        <p id="err-nominal" class="text-xs text-destructive" hidden></p>
+      </div>
       <div class="grid gap-1.5 mb-4">
         <label for="inp-catatan" class="text-sm font-medium">
           Catatan <span id="catatan-note" class="text-xs font-normal text-muted"></span>

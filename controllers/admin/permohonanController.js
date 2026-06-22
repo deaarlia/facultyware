@@ -116,7 +116,7 @@ exports.getDetailPermohonan = async (req, res, next) => {
 
 exports.verifikasiPermohonan = async (req, res) => {
     const { id } = req.params;
-    const { status_verifikasi, catatan } = req.body;
+    const { status_verifikasi, catatan, nominal } = req.body;
 
     const validStatuses = ['1', '2', '3'];
     if (!validStatuses.includes(String(status_verifikasi))) {
@@ -145,6 +145,13 @@ exports.verifikasiPermohonan = async (req, res) => {
 
         if (!refund) {
             return res.status(404).json({ success: false, message: 'Data refund tidak ditemukan.' });
+        }
+
+        if (statusNum === 1 && nominal) {
+            await db.query(
+                'UPDATE student_request_refund SET refund_nominal = ? WHERE student_request_id = ?',
+                [Number(nominal), id]
+            );
         }
 
         const [[existing]] = await db.query(

@@ -45,12 +45,16 @@ function openModal(status) {
   document.getElementById('modal-desc').textContent = cfg.desc;
   document.getElementById('catatan-note').textContent = cfg.note;
   document.getElementById('inp-catatan').value = '';
+  document.getElementById('inp-nominal').value = '';
+
+  document.getElementById('nominal-field').hidden = status !== '1';
 
   const btn = document.getElementById('btn-konfirmasi');
   btn.textContent = cfg.btnLabel;
   btn.className = cfg.btnClass;
 
   document.getElementById('err-catatan').hidden = true;
+  document.getElementById('err-nominal').hidden = true;
   document.getElementById('modal-error').hidden = true;
   document.getElementById('modal-overlay').style.display = 'flex';
 }
@@ -62,11 +66,20 @@ function closeModal() {
 async function submitVerifikasi() {
   const status = document.getElementById('inp-status').value;
   const catatan = document.getElementById('inp-catatan').value.trim();
+  const nominal = document.getElementById('inp-nominal').value.trim();
   const errCat = document.getElementById('err-catatan');
+  const errNominal = document.getElementById('err-nominal');
   const errEl = document.getElementById('modal-error');
 
   errCat.hidden = true;
+  errNominal.hidden = true;
   errEl.hidden = true;
+
+  if (status === '1' && !nominal) {
+    errNominal.textContent = 'Nominal wajib diisi saat menyetujui permohonan.';
+    errNominal.hidden = false;
+    return;
+  }
 
   if (['2', '3'].includes(status) && !catatan) {
     errCat.textContent = status === '2'
@@ -85,7 +98,7 @@ async function submitVerifikasi() {
     const res = await fetch(`/api/admin/permohonan/${PERMOHONAN_ID}/verifikasi`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ status_verifikasi: status, catatan }),
+      body: JSON.stringify({ status_verifikasi: status, catatan, nominal }),
     });
     const data = await res.json();
 
