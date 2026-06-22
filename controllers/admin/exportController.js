@@ -1,10 +1,11 @@
-const db = require('../../lib/db');
+const { getConnection } = require('../../lib/db');
 const exporter = require('../../utils/exporter');
 
 const sidebarData = (req) => ({ user: req.session.email || '-' });
 
 exports.eksporPage = async (req, res, next) => {
     try {
+        const db = await getConnection();
         const [periodes] = await db.query(
             'SELECT * FROM ukt_refund_periods ORDER BY created_at DESC'
         );
@@ -20,6 +21,7 @@ exports.eksporPage = async (req, res, next) => {
 exports.downloadEkspor = async (req, res) => {
     const { format, periode_id } = req.query;
     try {
+        const db = await getConnection();
         const conditions = ["srr.refund_type = 'UKT'", 'sr.status = 1'];
         const params = [];
 

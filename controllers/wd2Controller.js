@@ -1,9 +1,10 @@
 
-const db = require('../lib/db');
+const { getConnection } = require('../lib/db');
 
 // 1. GET: Semua permohonan masuk langsung ke WD 2 (Bypass Admin untuk Testing)
 const getDaftarPermohonan = async (req, res) => {
   try {
+    const db = await getConnection();
     const querySQL = `
       SELECT 
         COALESCE(a.id, srr.id) AS id, 
@@ -68,6 +69,7 @@ const updateKeputusanFinal = async (req, res) => {
   }
 
   try {
+    const db = await getConnection();
     // Konversi string status_sistem dari wd2.html menjadi angka status internal database kamu
     // Sesuai logika tabel: 2 = Disetujui, 3 = Ditolak
     let statusAngka = 1;
@@ -103,6 +105,7 @@ const updateKeputusanFinal = async (req, res) => {
 // Sinkron dengan: fetch(`${BACKEND_URL}/api/wd2/permohonan/ekspor`)
 const getLaporanEkspor = async (req, res) => {
   try {
+    const db = await getConnection();
     const querySQL = `
       SELECT 
         st.regno AS NIM,

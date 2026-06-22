@@ -1,4 +1,4 @@
-const db = require('../../lib/db');
+const { getConnection } = require('../../lib/db');
 
 const sidebarData = (req) => ({ user: req.session.email || '-' });
 
@@ -6,6 +6,7 @@ const STATUS_LABELS = { 0: 'Menunggu', 1: 'Disetujui', 2: 'Ditolak', 3: 'Butuh R
 
 exports.getDaftarPermohonan = async (req, res, next) => {
     try {
+        const db = await getConnection();
         const page   = Math.max(1, parseInt(req.query.page)  || 1);
         const limit  = Math.max(1, parseInt(req.query.limit) || 10);
         const offset = (page - 1) * limit;
@@ -66,6 +67,7 @@ exports.getDaftarPermohonan = async (req, res, next) => {
 
 exports.getDetailPermohonan = async (req, res, next) => {
     try {
+        const db = await getConnection();
         const { id } = req.params;
 
         const [[permohonan]] = await db.query(
@@ -117,7 +119,8 @@ exports.getDetailPermohonan = async (req, res, next) => {
 exports.verifikasiPermohonan = async (req, res) => {
     const { id } = req.params;
     const { status_verifikasi, catatan, nominal } = req.body;
-
+    
+    const db = await getConnection();
     const validStatuses = ['1', '2', '3'];
     if (!validStatuses.includes(String(status_verifikasi))) {
         return res.status(400).json({
@@ -191,6 +194,7 @@ exports.verifikasiPermohonan = async (req, res) => {
 exports.batalkanVerifikasi = async (req, res) => {
     const { id } = req.params;
     try {
+        const db = await getConnection();
         const [result] = await db.query(
             'UPDATE student_requests SET status = 0 WHERE id = ? AND status IN (1, 2, 3)',
             [id]
@@ -223,6 +227,7 @@ exports.batalkanVerifikasi = async (req, res) => {
 
 exports.hapusDraftPermohonan = async (req, res) => {
     try {
+        const db = await getConnection();
         const [result] = await db.query(`
             DELETE sr FROM student_requests sr
             JOIN student_request_refund srr ON sr.id = srr.student_request_id

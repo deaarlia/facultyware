@@ -1,4 +1,4 @@
-const db = require('../lib/db');
+const { getConnection } = require('../lib/db');
 const multer = require('multer');
 const path = require('path');
 const storage = multer.diskStorage({
@@ -49,6 +49,7 @@ exports.uploadFields = (req, res, next) => {
 
 exports.ajukanPengembalian = async (req, res) => {
     try {
+        const db = await getConnection();
         const { nama, nim, departemen, whatsapp } = req.body;
 
         const appLetter = req.files && req.files['application_letter_file'] ? req.files['application_letter_file'][0].filename : null;
@@ -124,6 +125,7 @@ exports.ajukanPengembalian = async (req, res) => {
 
 exports.ubahPengajuan = async (req, res) => {
     try {
+        const db = await getConnection();
         const { id } = req.params; 
         const { nama, nim, departemen, whatsapp, student_id } = req.body;
 
@@ -177,6 +179,7 @@ exports.ubahPengajuan = async (req, res) => {
 
 exports.lihatStatusPengajuan = async (req, res) => {
     try {
+        const db = await getConnection();
         const { student_id } = req.query;
 
         let query = `

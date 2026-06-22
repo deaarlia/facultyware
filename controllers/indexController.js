@@ -1,5 +1,5 @@
 const bcrypt = require("bcryptjs");
-const db = require("../lib/db");
+const { getConnection } = require("../lib/db");
 
 const index = (req, res) => {
   res.redirect("/login");
@@ -24,6 +24,7 @@ const login = async (req, res, next) => {
   const { email, password } = req.body;
 
   try {
+    const db = await getConnection();
     const [rows] = await db.query("SELECT * FROM users WHERE email = ?", [email]);
 
     if (rows.length === 0) {
