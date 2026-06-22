@@ -1,66 +1,66 @@
-// ========================================================
-// FILE: controllers/wd2Controller.js
-// ========================================================
 
 const mysql = require('mysql2/promise');
-
-// Inisialisasi Koneksi Langsung ke Database 'facultyware'
 const db = mysql.createPool({
   host: 'localhost',
-  user: 'root',          // Silakan sesuaikan jika user MySQL lokal kamu berbeda
-  password: '',          // Silakan sesuaikan jika MySQL kamu menggunakan password
-  database: 'facultyware', // Sesuai dengan nama database di phpMyAdmin kamu
+  user: 'root',          
+  password: '',          
+  database: 'facultyware', 
   waitForConnections: true,
   connectionLimit: 10,
   queueLimit: 0
 });
 
-// 1. GET: Antrean data untuk Dashboard WD2
-// Sinkron dengan: fetch(`${BACKEND_URL}/api/wd2/pengembalian-ukt/list`)
+// 1. GET: Semua permohonan masuk langsung ke WD 2 (Bypass Admin untuk Testing)
 const getDaftarPermohonan = async (req, res) => {
   try {
-    // Query mandiri ke tabel approvals tanpa melakukan JOIN terlebih dahulu 
-    // untuk memastikan server tidak crash jika tabel utama belum siap.
     const querySQL = `
       SELECT 
-        id,
-        student_request_refund_id,
-        level,
-        approval_position,
-        status,
-        approval_reason AS catatan,
-        -- Menyediakan data fallback agar frontend wd2.html tidak kosong/error
-        'Mahasiswa ID ' AS nama,
-        student_request_refund_id AS nim,
-        'FAKULTAS' AS departemen,
-        NULL AS appLetter,
-        NULL AS uktReceipt,
-        NULL AS rectorDecree,
+        COALESCE(a.id, srr.id) AS id, 
+        srr.id AS student_request_refund_id,
+        COALESCE(a.level, 0) AS level, -- Jika data baru/NULL otomatis diatur ke lvl 0 (Admin)
+        a.status,
+        a.approval_reason AS catatan,
+        st.name AS nama,
+        st.regno AS nim,
+        st.department_id,
+        srr.application_letter_file AS appLetter, 
+        srr.ukt_payment_receipt_file AS uktReceipt,   
+        srr.rector_decree_file AS rectorDecree,       
         CASE 
-          WHEN status = 1 THEN 'Menunggu Validasi Wakil Dekan 2'
-          WHEN status = 2 THEN 'Selesai / Disetujui Wakil Dekan 2'
-          WHEN status = 3 THEN 'Ditolak'
-          ELSE 'Menunggu Validasi Admin'
+          WHEN a.level = 2 THEN 'Selesai / Disetujui Wakil Dekan 2'
+          WHEN a.level = 1 THEN 'Menunggu Validasi Wakil Dekan 2'
+          ELSE 'Menunggu Validasi Admin' -- Berlaku untuk lvl 0 atau jika data approval belum dibuat
         END AS status_sistem
-      FROM student_request_refund_approvals
-      WHERE approval_position = 'Wakil Dekan 2' OR level = 2
+      FROM student_request_refund srr
+      LEFT JOIN student_request_refund_approvals a ON srr.id = a.student_request_refund_id
+      LEFT JOIN students st ON srr.student_request_id = st.id
+      ORDER BY srr.id DESC
     `;
 
     const [rows] = await db.query(querySQL);
 
-    // Manipulasi nama sedikit agar terlihat rapi di tabel frontend
-    const dataClean = rows.map(item => ({
-      ...item,
-      nama: `Mahasiswa #${item.student_request_refund_id}`
-    }));
+    const dataClean = rows.map(item => {
+      const namaMahasiswa = item.nama ? item.nama : "Mahasiswa Baru (Simulasi)";
+      const nimMahasiswa = item.nim ? item.nim : "NIM Belum Diatur";
+      
+      let deptString = "TEKNIK KOMPUTER";
+      if (item.department_id === 2) deptString = "SISTEM INFORMASI";
+      if (item.department_id === 3) deptString = "INFORMATIKA";
+
+      return {
+        ...item,
+        nama: namaMahasiswa,
+        nim: nimMahasiswa,
+        departemen: deptString
+      };
+    });
 
     res.status(200).json({
       success: true,
       data: dataClean
     });
   } catch (error) {
-    console.error("[ERROR] Gagal mengambil data database:", error.message);
-    // Mengembalikan response 500 JSON secara elegan, sehingga server Node.js tetap hidup
+    console.error("[ERROR] Gagal mengambil data WD2:", error.message);
     res.status(500).json({
       success: false,
       message: 'Terjadi gangguan internal pada server database.'
@@ -114,19 +114,27 @@ const getLaporanEkspor = async (req, res) => {
   try {
     const querySQL = `
       SELECT 
-        r.nim AS NIM,
-        r.nama AS Nama_Mahasiswa,
-        r.departemen AS Departemen,
-        a.status AS Status_Akhir,
+        st.regno AS NIM,
+        st.name AS Nama_Mahasiswa,
+        CASE 
+          WHEN st.department_id = 2 THEN 'SISTEM INFORMASI'
+          WHEN st.department_id = 3 THEN 'INFORMATIKA'
+          ELSE 'TEKNIK KOMPUTER'
+        END AS Departemen,
+        CASE 
+          WHEN a.status = 2 THEN 'Disetujui Final'
+          WHEN a.status = 3 THEN 'Ditolak'
+          ELSE 'Diproses'
+        END AS Status_Akhir,
         a.updated_at AS Tanggal_Keputusan
       FROM student_request_refund_approvals a
-      LEFT JOIN student_request_refunds r ON a.student_request_refund_id = r.id
+      LEFT JOIN student_request_refund srr ON a.student_request_refund_id = srr.id
+      LEFT JOIN students st ON srr.student_request_id = st.id
       WHERE a.approval_position = 'Wakil Dekan 2' OR a.level = 2
     `;
     
     const [rows] = await db.query(querySQL);
 
-    // Kirimkan data mentah, proses pemformatan CSV akan ditangani sepenuhnya oleh fungsi eksporLaporanAkhir() di wd2.html
     res.status(200).json({
       success: true,
       data: rows

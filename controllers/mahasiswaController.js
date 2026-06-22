@@ -1,8 +1,6 @@
 const db = require('../lib/db');
 const multer = require('multer');
 const path = require('path');
-
-// 1. KONFIGURASI PENYIMPANAN FILE FISIK (MULTER)
 const storage = multer.diskStorage({
     destination: function (req, file, cb) {
         cb(null, 'public/uploads/');
@@ -46,9 +44,6 @@ exports.ajukanPengembalian = async (req, res) => {
         if (departemen === 'SISTEM INFORMASI') dep_id = 2;
         else if (departemen === 'INFORMATIKA') dep_id = 3;
 
-        // ========================================================
-        // PROSES 1: Validasi & Pembuatan ID Manual untuk Tabel 'students'
-        // ========================================================
         const [checkMhs] = await db.execute('SELECT id FROM students WHERE regno = ?', [nim]);
         let finalStudentId;
 
@@ -59,24 +54,17 @@ exports.ajukanPengembalian = async (req, res) => {
                 [nama, dep_id, whatsapp, finalStudentId]
             );
         } else {
-            // JIKA AKUN BARU: Cari ID tertinggi secara manual di tabel 'students'
             const [maxMhsRow] = await db.execute('SELECT MAX(id) AS maxId FROM students');
             finalStudentId = (maxMhsRow[0].maxId || 0) + 1;
 
-            // Masukkan ID manual ke dalam perintah INSERT
             await db.execute(
                 'INSERT INTO students (id, name, regno, department_id, phone_no) VALUES (?, ?, ?, ?, ?)',
                 [finalStudentId, nama, nim, dep_id, whatsapp]
             );
         }
 
-        // ========================================================
-        // PROSES 2: Pembuatan ID Manual untuk Tabel 'student_request_refund'
-        // ========================================================
         const [maxRefundRow] = await db.execute('SELECT MAX(id) AS maxId FROM student_request_refund');
         const finalRefundId = (maxRefundRow[0].maxId || 0) + 1;
-
-        // Memasukkan kolom 'id' secara eksplisit agar MySQL tidak otomatis mengisinya dengan angka 0
         const query = `
             INSERT INTO student_request_refund (
                 id, student_request_id, refund_type, refund_nominal, reason, 
@@ -89,7 +77,7 @@ exports.ajukanPengembalian = async (req, res) => {
         const defaultReason = "Pengajuan melalui sistem form";
 
         await db.execute(query, [
-            finalRefundId,   // ID Baru yang unik hasil dari MAX(id) + 1
+            finalRefundId,   
             finalStudentId,  
             defaultRefundType, 
             defaultNominal, 
