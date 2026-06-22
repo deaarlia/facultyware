@@ -59,10 +59,6 @@ const login = async (req, res, next) => {
       req.session.cookie.maxAge = 1000 * 60 * 60 * 1; 
     }
 
-    if (roles.includes('wd2') || roles.includes('wd')) {
-      return res.redirect("/wd2"); 
-    }
-
     if (roles.includes('mahasiswa')) {
       const [studentRows] = await db.query(
         "SELECT id, name, regno, department_id FROM students WHERE email = ? OR campus_email = ?", 
@@ -77,15 +73,22 @@ const login = async (req, res, next) => {
       } else {
         console.log(`⚠️ Peringatan: Akun ${user.email} tidak ditemukan di tabel 'students'.`);
       }
+    }
+
+    req.session.save((err) => {
+      if (err) return next(err);
       
-      return res.redirect("/mahasiswa"); 
-    }
-
-    if (roles.includes('admin')) {
-      return res.redirect("/dashboard");
-    }
-
-    return res.redirect("/home");
+      if (roles.includes('wd2') || roles.includes('wd')) {
+        return res.redirect("/wd2"); 
+      }
+      if (roles.includes('mahasiswa')) {
+        return res.redirect("/mahasiswa"); 
+      }
+      if (roles.includes('admin')) {
+        return res.redirect("/dashboard");
+      }
+      return res.redirect("/home");
+    });
 
   } catch (err) {
     next(err);
@@ -95,6 +98,7 @@ const login = async (req, res, next) => {
 const logout = (req, res, next) => {
   req.session.destroy((err) => {
     if (err) return next(err);
+    res.clearCookie('session_cookie_name');
     res.redirect("/login");
   });
 };
