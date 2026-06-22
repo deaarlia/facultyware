@@ -17,11 +17,35 @@ const storage = multer.diskStorage({
     }
 });
 
-exports.uploadFields = multer({ storage: storage }).fields([
+const upload = multer({
+    storage: storage,
+    fileFilter: function (req, file, cb) {
+        const filetypes = /pdf/;
+        const mimetype = file.mimetype === 'application/pdf';
+        const extname = filetypes.test(path.extname(file.originalname).toLowerCase());
+
+        if (mimetype && extname) {
+            return cb(null, true);
+        }
+        cb(new Error('Hanya berkas PDF (.pdf) yang diperbolehkan!'));
+    }
+}).fields([
     { name: 'application_letter_file', maxCount: 1 },
     { name: 'ukt_payment_receipt_file', maxCount: 1 },
     { name: 'rector_decree_file', maxCount: 1 }
 ]);
+
+exports.uploadFields = (req, res, next) => {
+    upload(req, res, function (err) {
+        if (err) {
+            return res.status(400).json({
+                success: false,
+                message: err.message
+            });
+        }
+        next();
+    });
+};
 
 exports.ajukanPengembalian = async (req, res) => {
     try {

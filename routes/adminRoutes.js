@@ -1,13 +1,13 @@
 const express = require('express');
 const router  = express.Router();
-const { isAuthenticated } = require('../middlewares/auth');
+const { isAuthenticated, hasRole } = require('../middlewares/auth');
 
 const dashboardCtrl  = require('../controllers/admin/dashboardController');
 const periodeCtrl     = require('../controllers/admin/periodeController');
 const permohonanCtrl = require('../controllers/admin/permohonanController');
 const exportCtrl     = require('../controllers/admin/exportController');
 
-const auth = [isAuthenticated];
+const auth = [isAuthenticated, hasRole('admin')];
 
 router.get('/dashboard',          ...auth, dashboardCtrl.getDashboard);
 router.get('/ukt/periode',        ...auth, periodeCtrl.getPeriodeList);
