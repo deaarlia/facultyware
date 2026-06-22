@@ -33,7 +33,7 @@ exports.downloadEkspor = async (req, res) => {
         const [data] = await db.query(
             `SELECT s.regno,
                     s.name,
-                    s.department_id      AS Departemen,
+                    ou.name              AS Departemen,
                     srr.refund_type,
                     srr.refund_nominal,
                     sr.requested_at,
@@ -42,6 +42,7 @@ exports.downloadEkspor = async (req, res) => {
              FROM student_requests sr
              JOIN student_request_refund srr ON sr.id = srr.student_request_id
              JOIN students s ON sr.requested_by = s.id
+             LEFT JOIN organization_units ou ON s.department_id = ou.id
              LEFT JOIN student_request_refund_approvals appr
                     ON appr.student_request_refund_id = srr.id
                    AND appr.level = 1
@@ -50,6 +51,7 @@ exports.downloadEkspor = async (req, res) => {
             params
         );
 
+        console.log('data[0]:', data[0]);
         return format === 'pdf'
             ? exporter.sendPDF(res, data)
             : await exporter.sendXLS(res, data);

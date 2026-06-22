@@ -1,7 +1,7 @@
 <%
-  const pageTitle   = 'Daftar Permohonan';
-  const breadcrumbs = [{ label: 'Daftar Permohonan' }];
-  const pageScript  = null;
+  pageTitle   = 'Daftar Permohonan';
+  breadcrumbs = [{ label: 'Daftar Permohonan' }];
+  pageScript  = null;
 
   const pag = pagination;
   const qs  = 'search=' + encodeURIComponent(search) + '&status=' + filterStatus + '&limit=' + pag.limit;
@@ -53,6 +53,7 @@
             <tr>
               <th>NIM</th>
               <th>Nama Mahasiswa</th>
+              <th>Departemen</th>
               <th>Jenis</th>
               <th>Nominal</th>
               <th>Tanggal</th>
@@ -72,6 +73,7 @@
               <tr>
                 <td class="font-mono text-sm"><%= p.nim %></td>
                 <td class="font-medium"><%= p.nama_mahasiswa %></td>
+                <td class="text-sm"><%= p.nama_departemen || '—' %></td>
                 <td class="text-sm"><%= p.refund_type || '—' %></td>
                 <td class="text-sm"><%= nominal %></td>
                 <td class="text-sm text-muted"><%= tgl %></td>

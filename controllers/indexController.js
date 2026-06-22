@@ -1,91 +1,74 @@
-const bcrypt = require("bcryptjs");
-const db = require("../lib/db");
+  const bcrypt = require("bcryptjs");
+  const db = require("../lib/db");
 
-const index = (req, res) => {
-  res.render("index", { title: "Express" });
-};
+  const index = (req, res) => {
+    res.render("index", { title: "Express" });
+  };
 
-const home = (req, res) => {
-  res.render("home", { title: "Home", user: req.session.email });
-};
+  const home = (req, res) => {
+    res.render("home", { title: "Home", user: req.session.email });
+  };
 
-const loginPage = (req, res) => {
-  if (req.session.userId) {
-    return res.redirect("/home");
-  }
-  res.render("login", { title: "Login", error: null });
-};
-
-const login = async (req, res, next) => {
-  const { email, password } = req.body;
-
-  try {
-    // 🟢 Debug logs to see exactly what data is arriving from the frontend form
-    console.log("--- LOGIN ATTEMPT ---");
-    console.log("Form email value:", email);
-    console.log("Form password value:", password);
-
-    // Running the database fetch (Only one 'const [rows]' declaration here!)
-    const [rows] = await db.query("SELECT * FROM users WHERE email = ?", [
-      email,
-    ]);
-
-    console.log("Database rows found count:", rows.length);
-    if (rows.length > 0) {
-      console.log("Database password hash:", rows[0].password);
+  const loginPage = (req, res) => {
+    if (req.session.userId) {
+      return res.redirect("/home");
     }
-    console.log("----------------------");
+    res.render("login", { title: "Login", error: null });
+  };
 
-    // Check if user exists
-    if (rows.length === 0) {
-      return res.render("login", {
-        title: "Login",
-        error: "Invalid email or password",
-      });
+  const login = async (req, res, next) => {
+    const { email, password } = req.body;
+
+    try {
+      const [rows] = await db.query("SELECT * FROM users WHERE email = ?", [email]);
+
+      if (rows.length === 0) {
+        return res.render("login", { title: "Login", error: "Invalid email or password" });
+      }
+
+      const user = rows[0];
+      const isMatch = await bcrypt.compare(password, user.password);
+
+      if (!isMatch) {
+        return res.render("login", { title: "Login", error: "Invalid email or password" });
+      }
+
+      req.session.userId = user.id;
+      req.session.email = user.email;
+
+      const [roleRows] = await db.query(`
+        SELECT r.name 
+        FROM roles r
+        JOIN model_has_roles mhr ON r.id = mhr.role_id
+        WHERE mhr.model_id = ?
+      `, [Number(user.id)]);
+
+      const roles = roleRows.map(row => row.name.toLowerCase());
+      req.session.roles = roles;
+
+      if (roles.includes('admin')) {
+        req.session.cookie.maxAge = 1000 * 60 * 60 * 2;
+      } else if (roles.includes('dekan') || roles.includes('wd')) {
+        req.session.cookie.maxAge = 1000 * 60 * 15;
+      } else {
+        req.session.cookie.maxAge = 1000 * 60 * 60 * 1;
+      }
+
+      if (roles.includes('admin')) {
+        return res.redirect("/dashboard");
+      }
+      return res.redirect("/home");
+
+    } catch (err) {
+      next(err);
     }
+  };
 
-    const user = rows[0];
-    const isMatch = await bcrypt.compare(password, user.password);
+  const logout = (req, res, next) => {
+    req.session.destroy((err) => {
+      if (err) return next(err);
+      res.redirect("/login");
+    });
+  };
 
-    if (!isMatch) {
-      return res.render("login", {
-        title: "Login",
-        error: "Invalid email or password",
-      });
-    }
-
-    // Set session core identifiers
-    req.session.userId = user.id;
-    req.session.email = user.email;
-
-    // Set contextual, inactivity-based session lifetimes
-    if (user.email === 'admin@unand.ac.id') {
-      req.session.cookie.maxAge = 1000 * 60 * 60 * 2; // Admin gets 2 hours
-    } else if (user.email.includes('dekan') || user.email.includes('wd')) {
-      req.session.cookie.maxAge = 1000 * 60 * 15;     // Wakil Dekan II gets 15 mins
-    } else {
-      req.session.cookie.maxAge = 1000 * 60 * 60 * 1; // Students get 1 hour
-    }
-
-    res.redirect("/home");
-  } catch (err) {
-    next(err);
-  }
-};
-
-const logout = (req, res, next) => {
-  req.session.destroy((err) => {
-    if (err) {
-      return next(err);
-    }
-    res.redirect("/login");
-  });
-};
-
-module.exports = {
-  index,
-  home,
-  loginPage,
-  login,
-  logout
-};
+  module.exports = { index, home, loginPage, login, logout };

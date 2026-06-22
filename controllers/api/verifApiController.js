@@ -25,6 +25,7 @@ exports.getVerifikasiTahap1JSON = async (req, res) => {
              FROM student_requests sr
              JOIN student_request_refund srr ON sr.id = srr.student_request_id
              JOIN students s ON sr.requested_by = s.id
+             LEFT JOIN organization_units ou ON s.department_id = ou.id
              ${where}`, params
         );
 
@@ -33,7 +34,7 @@ exports.getVerifikasiTahap1JSON = async (req, res) => {
                     sr.request_nunmber AS request_number,
                     s.regno AS student_nim,
                     s.name  AS student_name,
-                    s.department_id AS faculty_department_id,
+                    ou.name AS faculty_department,
                     srr.refund_type,
                     CAST(srr.refund_nominal AS DECIMAL(14,2)) AS refund_amount,
                     CASE sr.status
@@ -45,12 +46,15 @@ exports.getVerifikasiTahap1JSON = async (req, res) => {
              FROM student_requests sr
              JOIN student_request_refund srr ON sr.id = srr.student_request_id
              JOIN students s ON sr.requested_by = s.id
+             LEFT JOIN organization_units ou ON s.department_id = ou.id
              ${where}
              ORDER BY sr.requested_at DESC
              LIMIT ? OFFSET ?`,
             [...params, _limit, _offset]
         );
 
+        const filename = `verifikasi-ukt-${Date.now()}.json`;
+        res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
         res.status(200).json({
             status: 'success',
             source: 'Fakultas — Verifikasi Validasi UKT',

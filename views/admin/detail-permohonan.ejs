@@ -1,11 +1,11 @@
 <%
-  const pageTitle   = 'Detail Permohonan #' + permohonan.id;
-  const breadcrumbs = [
+  pageTitle   = 'Detail Permohonan #' + permohonan.id;
+  breadcrumbs = [
     { label: 'Daftar Permohonan', href: '/ukt/permohonan' },
     { label: 'Detail #' + permohonan.id },
   ];
-  const pageScript = '/javascripts/admin/detail-permohonan.js';
-
+  pageScript  = '/javascripts/admin/detail-permohonan.js';
+  
   // Status banner safely mapped
   const statusMap = {
     pending:  { label: 'Menunggu Verifikasi Admin', color: '#f59e0b' },
