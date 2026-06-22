@@ -75,11 +75,11 @@
 
         <div class="stats-grid">
             <div class="stat-card" style="border-left: 4px solid #f59e0b;">
-                <h4>Perlu Review WD2</h4>
+                <h4>Perlu Review WD2 (Lvl 1)</h4>
                 <p id="count-pending">0 Permohonan</p>
             </div>
             <div class="stat-card" style="border-left: 4px solid #16a34a;">
-                <h4>Total Permohonan Disetujui</h4>
+                <h4>Total Permohonan Selesai (Lvl 2)</h4>
                 <p id="count-approved">0 Permohonan</p>
             </div>
         </div>
@@ -132,7 +132,6 @@
     </div>
 
     <script>
-// SUDAH DIUBAH KE PORT 3000
 const BACKEND_URL = "http://localhost:3000";
 
 async function loadAntreanWD2() {
@@ -156,21 +155,26 @@ async function loadAntreanWD2() {
             const namaMahasiswa = item.nama_mahasiswa || item.nama || "Mahasiswa";
             const nimMahasiswa = item.nim || "-";
             const departemen = item.departemen || item.id_departemen || "-";
+            const lvl = Number(item.level);
 
-            if (statusSistem.includes('Admin') || statusSistem.includes('Validasi') || statusSistem.includes('Menunggu')) {
-                pendingCount++;
+            // HITUNG STATISTIK BERDASARKAN ATURAN LEVEL BARU
+            if (lvl === 1) {
+                pendingCount++; // Hanya lvl 1 yang perlu tindakan WD 2
             }
-            if (statusSistem.includes('Selesai') || statusSistem.includes('Wakil Dekan 2')) {
-                approvedCount++;
+            if (lvl === 2) {
+                approvedCount++; // lvl 2 masuk ke counter selesai
             }
             
+            // WARNA BADGE BERDASARKAN LEVEL DAN STATUS SYSTEM
             let badgeStyle = "padding: 6px 12px; border-radius: 9999px; font-size: 11px; font-weight: 600; display: inline-flex; align-items: center; white-space: nowrap;";
             if (statusSistem.includes('Ditolak')) {
                 badgeStyle += " background-color: #dc2626; color: #ffffff;";
-            } else if (statusSistem.includes('Wakil Dekan 2') || statusSistem.includes('Selesai')) {
+            } else if (lvl === 2) {
                 badgeStyle += " background-color: #16a34a; color: #ffffff;";
+            } else if (lvl === 1) {
+                badgeStyle += " background-color: #f59e0b; color: #ffffff;"; // Lvl 1: Amber/Kuning
             } else {
-                badgeStyle += " background-color: #f59e0b; color: #ffffff;";
+                badgeStyle += " background-color: #71717a; color: #ffffff;"; // Lvl 0: Abu-abu (Menunggu Admin)
             }
 
             let berkasHTML = `<div style="display: flex; flex-direction: column; gap: 6px; font-size: 12px; width: 100%; max-width: 180px;">`;
@@ -200,8 +204,11 @@ async function loadAntreanWD2() {
             }
             berkasHTML += `</div>`;
 
-            let aksiHTML = `<span style="font-size: 12px; color: #a1a1aa;">Selesai diproses</span>`;
-            if (!statusSistem.includes('Wakil Dekan 2') && !statusSistem.includes('Selesai') && !statusSistem.includes('Ditolak')) {
+            // LOGIKA AKSI KEPUTUSAN WD 2 BERDASARKAN STRUKTUR LEVEL BARU (0, 1, 2)
+            let aksiHTML = '';
+            if (lvl === 0) {
+                aksiHTML = `<span style="font-size: 12px; color: #71717a; font-style: italic; font-weight: 500;">Terkunci / Hak Akses Admin</span>`;
+            } else if (lvl === 1) {
                 aksiHTML = `
                     <div style="display: flex; gap: 8px;">
                         <button type="button" class="btn-action-approve" onclick="openReviewModal('${item.id}', 'setuju')">
@@ -214,6 +221,12 @@ async function loadAntreanWD2() {
                         </button>
                     </div>
                 `;
+            } else if (lvl === 2) {
+                if (statusSistem.includes('Ditolak')) {
+                    aksiHTML = `<span style="font-size: 12px; color: #dc2626; font-weight: 600;">Selesai (Ditolak)</span>`;
+                } else {
+                    aksiHTML = `<span style="font-size: 12px; color: #16a34a; font-weight: 600;">Selesai (Disetujui)</span>`;
+                }
             }
 
             tbody.innerHTML += `
