@@ -5,6 +5,8 @@ const { isAuthenticated, hasRole } = require("../middlewares/auth");
 const wd2Router = require('./wd2Routes');
 
 router.get("/", indexController.index);
+router.get("/index", indexController.index);
+router.get("/index.ejs", indexController.index);
 
 router.get("/home", isAuthenticated, indexController.home);
 
