@@ -1,0 +1,94 @@
+<%
+  pageTitle   = 'Periode Permohonan';
+  breadcrumbs = [{ label: 'Periode Permohonan' }];
+  pageScript  = '/javascripts/admin/periode.js';
+  const safePeriodes = Array.isArray(periodes) ? periodes : [];
+%>
+
+<script>
+  const PERIODES = JSON.parse(decodeURIComponent('<%- encodeURIComponent(JSON.stringify(safePeriodes)) %>'));
+</script>
+
+<%- include('../partials/admin-layout') %>
+
+  <div class="mb-6 flex items-center justify-between">
+    <div>
+      <h1 class="text-2xl font-bold tracking-tight">Periode Permohonan</h1>
+      <p class="text-sm mt-1 text-muted">Kelola periode pengajuan pengembalian UKT mahasiswa.</p>
+    </div>
+    <button id="btn-tambah" type="button" class="btn" onclick="window.openModal()">
+      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
+        stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <path d="M5 12h14"/><path d="M12 5v14"/>
+      </svg>
+      Tambah Periode
+    </button>
+  </div>
+
+  <div class="card p-0">
+    <header class="p-4 md:p-5 border-b flex items-center justify-between">
+      <div>
+        <h2 class="font-semibold">Daftar Periode</h2>
+        <p class="text-sm text-muted"><%= safePeriodes.length %> periode terdaftar</p>
+      </div>
+    </header>
+    <section class="p-0">
+      <div class="overflow-x-auto">
+        <table class="table w-full">
+          <thead>
+            <tr>
+              <th>Nama Periode</th>
+              <th>Tanggal Mulai</th>
+              <th>Deadline</th>
+              <th>Status</th>
+              <th class="text-right">Aksi</th>
+            </tr>
+          </thead>
+          <tbody id="tbody-periode">
+          </tbody>
+        </table>
+      </div>
+    </section>
+  </div>
+
+  <div id="modal-overlay" class="modal-overlay" role="dialog" aria-modal="true"
+    aria-labelledby="modal-title" style="display: none;">
+    <div class="modal-box">
+      <div class="flex items-center justify-between mb-4">
+        <h2 id="modal-title" class="text-lg font-semibold">Tambah Periode</h2>
+        <button type="button" onclick="window.closeModal()" class="btn-sm-icon-ghost size-7" aria-label="Tutup">✕</button>
+      </div>
+      <form id="form-periode" novalidate class="grid gap-4">
+        <div class="grid gap-1.5">
+          <label for="inp-name" class="text-sm font-medium">
+            Nama Periode <span class="text-destructive" aria-hidden="true">*</span>
+          </label>
+          <input id="inp-name" type="text" class="input" placeholder="cth: Semester Genap 2024/2025" />
+          <p id="err-name" class="text-xs text-destructive" hidden></p>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div class="grid gap-1.5">
+            <label for="inp-start" class="text-sm font-medium">
+              Tanggal Mulai <span class="text-destructive" aria-hidden="true">*</span>
+            </label>
+            <input id="inp-start" type="date" class="input" />
+            <p id="err-start" class="text-xs text-destructive" hidden></p>
+          </div>
+          <div class="grid gap-1.5">
+            <label for="inp-end" class="text-sm font-medium">
+              Deadline <span class="text-destructive" aria-hidden="true">*</span>
+            </label>
+            <input id="inp-end" type="date" class="input" />
+            <p id="err-end" class="text-xs text-destructive" hidden></p>
+          </div>
+        </div>
+        <p id="modal-error" class="error-box" hidden></p>
+        <div class="flex justify-end gap-2 mt-2">
+          <button type="button" onclick="window.closeModal()" class="btn-outline">Batal</button>
+          <button type="submit" id="btn-submit" class="btn">Simpan</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+<%- include('../partials/admin-footer') %>

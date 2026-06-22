@@ -1,0 +1,196 @@
+<%
+  const pageTitle   = 'Detail Permohonan #' + permohonan.id;
+  const breadcrumbs = [
+    { label: 'Daftar Permohonan', href: '/ukt/permohonan' },
+    { label: 'Detail #' + permohonan.id },
+  ];
+  const pageScript = '/javascripts/admin/detail-permohonan.js';
+
+  // Status banner safely mapped
+  const statusMap = {
+    pending:  { label: 'Menunggu Verifikasi Admin', color: '#f59e0b' },
+    approved: { label: 'Disetujui Admin (Tahap 1)', color: '#22c55e' },
+    rejected: { label: 'Ditolak Admin',              color: '#ef4444' },
+    revision: { label: 'Butuh Revisi Berkas',         color: '#94a3b8' },
+  };
+  
+  const statusKey = !adminApproval ? 'pending'
+    : adminApproval.status === 1   ? 'approved'
+    : adminApproval.status === 2   ? 'rejected'
+    : 'revision';
+  const si = statusMap[statusKey] || statusMap.pending;
+
+  // Safe checks untuk variabel dari controller
+  const hasWd2Acted = typeof wd2HasActed !== 'undefined' && wd2HasActed;
+  const safeApprovals = Array.isArray(approvals) ? approvals : [];
+
+  // Format helpers
+  const fmtDate = (d, opts) => d
+    ? new Date(d).toLocaleDateString('id-ID', opts || { day: '2-digit', month: 'short', year: 'numeric' })
+    : '—';
+    
+  // Format nominal aman jika nilainya 0
+  const fmtNominal = n => (n !== undefined && n !== null && n !== '') 
+    ? 'Rp ' + parseInt(n).toLocaleString('id-ID') 
+    : '—';
+
+  // File dokumen
+  const docFiles = [
+    { label: 'Surat Permohonan',        value: permohonan.application_letter_file },
+    { label: 'Kwitansi Pembayaran UKT', value: permohonan.ukt_payment_receipt_file },
+    { label: 'SK Rektor',               value: permohonan.rector_decree_file },
+    { label: 'Buku Tabungan',           value: permohonan.saving_book_fiel },
+  ];
+%>
+<%- include('../partials/admin-layout') %>
+
+  <div class="mb-5 flex items-start justify-between gap-4">
+    <div>
+      <h1 class="text-2xl font-bold tracking-tight">Detail Permohonan</h1>
+      <p class="text-sm mt-1 text-muted">
+        ID #<%= permohonan.id %> &mdash;
+        Diajukan <%= fmtDate(permohonan.requested_at, { day: '2-digit', month: 'long', year: 'numeric' }) %>
+      </p>
+    </div>
+    <div class="flex gap-2 shrink-0">
+      <% if (!adminApproval) { %>
+        <button class="btn btn-success" onclick="openModal('1')">Setujui</button>
+        <button class="btn-outline" onclick="openModal('3')">Butuh Revisi</button>
+        <button class="btn-outline btn-destructive-outline" onclick="openModal('2')">Tolak</button>
+      <% } else if (!hasWd2Acted) { %>
+        <button class="btn-outline btn-destructive-outline" onclick="batalkanVerifikasi()">Batalkan Verifikasi</button>
+      <% } %>
+    </div>
+  </div>
+
+  <div class="status-banner mb-5"
+    style="--status-color: <%= si.color %>; background: var(--status-color)1a; border-color: var(--status-color)4d;">
+    <div class="status-dot" style="background: var(--status-color); margin-top: 4px;"></div>
+    <div>
+      <p class="font-semibold text-sm"><%= si.label %></p>
+      <% if (adminApproval && adminApproval.approval_reason && adminApproval.approval_reason !== '-') { %>
+        <p class="text-sm mt-0.5 text-muted">Catatan: <%= adminApproval.approval_reason %></p>
+      <% } %>
+      <% if (hasWd2Acted) { %>
+        <p class="text-xs mt-1 text-muted">⚠ Sudah diproses WD 2 — tidak dapat dibatalkan</p>
+      <% } %>
+    </div>
+  </div>
+
+  <div class="grid grid-cols-1 lg:grid-cols-3 gap-5">
+    <div class="lg:col-span-2 grid gap-5">
+      <div class="card">
+        <header class="mb-4"><h2 class="font-semibold text-sm">Informasi Mahasiswa</h2></header>
+        <dl class="grid gap-3">
+          <div>
+            <dt class="text-xs font-medium uppercase tracking-wide text-muted">Nama</dt>
+            <dd class="font-medium mt-0.5"><%= permohonan.nama_mahasiswa %></dd>
+          </div>
+          <div>
+            <dt class="text-xs font-medium uppercase tracking-wide text-muted">NIM</dt>
+            <dd class="font-mono mt-0.5"><%= permohonan.nim %></dd>
+          </div>
+          <div>
+            <dt class="text-xs font-medium uppercase tracking-wide text-muted">Departemen</dt>
+            <dd class="mt-0.5"><%= permohonan.nama_departemen || permohonan.department_id || '—' %></dd>
+          </div>
+        </dl>
+      </div>
+
+      <div class="card">
+        <header class="mb-4"><h2 class="font-semibold text-sm">Detail Permohonan</h2></header>
+        <dl class="grid gap-3">
+          <div>
+            <dt class="text-xs font-medium uppercase tracking-wide text-muted">Jenis Pengembalian</dt>
+            <dd class="mt-0.5"><%= permohonan.refund_type || '—' %></dd>
+          </div>
+          <div>
+            <dt class="text-xs font-medium uppercase tracking-wide text-muted">Nominal</dt>
+            <dd class="font-semibold text-lg mt-0.5"><%= fmtNominal(permohonan.refund_nominal) %></dd>
+          </div>
+          <div>
+            <dt class="text-xs font-medium uppercase tracking-wide text-muted">Alasan</dt>
+            <dd class="mt-0.5"><%= permohonan.reason || '—' %></dd>
+          </div>
+        </dl>
+      </div>
+    </div>
+
+    <div class="grid gap-5 content-start">
+      <div class="card">
+        <header class="mb-3"><h2 class="font-semibold text-sm">Berkas Dokumen</h2></header>
+        <div class="grid gap-2">
+          <% docFiles.forEach(function(f) { %>
+            <% if (f.value) { %>
+              <a href="/uploads/<%= f.value %>" target="_blank" rel="noopener" class="btn-sm-outline flex items-center gap-2">
+                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/></svg>
+                <%= f.label %>
+              </a>
+            <% } else { %>
+              <div class="btn-sm-outline opacity-40 cursor-default flex items-center gap-2">
+                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/></svg>
+                <%= f.label %> — tidak tersedia
+              </div>
+            <% } %>
+          <% }) %>
+        </div>
+      </div>
+
+      <div class="card">
+        <header class="mb-3"><h2 class="font-semibold text-sm">Riwayat Verifikasi</h2></header>
+        <% if (safeApprovals.length === 0) { %>
+          <p class="text-sm py-3 text-muted">Belum ada riwayat verifikasi.</p>
+        <% } else { %>
+          <% safeApprovals.forEach(function(a) { %>
+            <%
+              const dotColor = a.status === 1 ? '#22c55e' : a.status === 2 ? '#ef4444' : '#f59e0b';
+              const statusText = a.status === 1 ? 'Disetujui'
+                : a.status === 2 ? 'Ditolak'
+                : a.status === 3 ? 'Butuh Revisi'
+                : 'Diproses';
+            %>
+            <div class="flex gap-3 py-3 border-b last:border-0">
+              <div class="status-dot" style="--dot-color: <%= dotColor %>; background: var(--dot-color);"></div>
+              <div>
+                <p class="text-sm font-medium"><%= a.approval_position || 'Admin' %></p>
+                <p class="text-xs text-muted">
+                  <%= statusText %> &bull; Level <%= a.level || '—' %>
+                </p>
+                <% if (a.approval_reason && a.approval_reason !== '-') { %>
+                  <p class="text-xs italic mt-0.5 text-muted">"<%= a.approval_reason %>"</p>
+                <% } %>
+                <p class="text-xs mt-0.5 text-muted"><%= fmtDate(a.updated_at) %></p>
+              </div>
+            </div>
+          <% }) %>
+        <% } %>
+      </div>
+    </div>
+  </div>
+
+  <div id="modal-overlay" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="modal-title">
+    <div class="modal-box" style="max-width:440px">
+      <div class="flex items-center justify-between mb-4">
+        <h2 id="modal-title" class="text-lg font-semibold"></h2>
+        <button type="button" onclick="closeModal()" class="btn-sm-icon-ghost size-7" aria-label="Tutup">✕</button>
+      </div>
+      <p id="modal-desc" class="text-sm mb-4 text-muted"></p>
+      <input type="hidden" id="inp-status" />
+      <div class="grid gap-1.5 mb-4">
+        <label for="inp-catatan" class="text-sm font-medium">
+          Catatan <span id="catatan-note" class="text-xs font-normal text-muted"></span>
+        </label>
+        <textarea id="inp-catatan" class="input" rows="3" placeholder="Tuliskan catatan atau alasan..."></textarea>
+        <p id="err-catatan" class="text-xs text-destructive" hidden></p>
+      </div>
+      <p id="modal-error" class="error-box mb-3" hidden></p>
+      <div class="flex justify-end gap-2">
+        <button type="button" onclick="closeModal()" class="btn-outline">Batal</button>
+        <button id="btn-konfirmasi" type="button" class="btn" onclick="submitVerifikasi()">Konfirmasi</button>
+      </div>
+    </div>
+  </div>
+
+  <script>const PERMOHONAN_ID = Number('<%= permohonan.id %>');</script>
+
+<%- include('../partials/admin-footer') %>

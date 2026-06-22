@@ -8,10 +8,10 @@ var MySQLStore = require('express-mysql-session')(session);
 
 var indexRouter = require('./routes/index');
 var usersRouter = require('./routes/users');
-// const dashboardRouter = require('./routes/dashboard');
 // [BARU] Import routes mahasiswa dan wd2
 const mahasiswaRoutes = require('./routes/mahasiswaRoutes');
 const wd2Routes = require('./routes/wd2Routes');
+const adminRoutes = require('./routes/adminRoutes');
 
 const { notFoundHandler, errorHandler } = require('./middlewares/error');
 
@@ -67,7 +67,9 @@ app.use('/api/wd2', wd2Routes);
 // Base Web Routes
 app.use('/', indexRouter);
 app.use('/users', usersRouter);
-// app.use('/', dashboardRouter);
+
+// Admin routes (web pages + API)
+app.use('/', adminRoutes);
 
 // catch 404 and forward to error handler
 app.use(notFoundHandler);

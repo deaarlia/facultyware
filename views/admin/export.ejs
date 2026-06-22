@@ -1,0 +1,125 @@
+<%
+  pageTitle   = 'Ekspor Rekapitulasi';
+  breadcrumbs = [{ label: 'Ekspor Rekapitulasi' }];
+  pageScript  = '/javascripts/admin/export.js';
+
+  const safePeriodes = Array.isArray(periodes) ? periodes : [];
+%>
+<%- include('../partials/admin-layout') %>
+
+  <div class="mb-6">
+    <h1 class="text-2xl font-bold tracking-tight">Ekspor Rekapitulasi</h1>
+    <p class="text-sm mt-1 text-muted">Unduh data mahasiswa yang lolos verifikasi Admin (Tahap 1).</p>
+  </div>
+
+  <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
+
+    <div class="lg:col-span-2 grid gap-6">
+      <div class="card">
+        <header class="mb-4 border-b pb-3">
+          <h2 class="font-semibold text-base">Konfigurasi Ekspor</h2>
+        </header>
+
+        <div class="grid gap-5">
+          <div class="grid gap-1.5 max-w-xl">
+            <label for="sel-periode" class="text-sm font-medium">Filter Periode</label>
+            <select id="sel-periode" class="input">
+              <option value="all">Semua Periode</option>
+              <% safePeriodes.forEach(function(p) { %>
+                <option value="<%= p.id %>">
+                  <%= p.name %>
+                  (<%= new Date(p.start_date).toLocaleDateString('id-ID', { month: 'short', year: 'numeric' }) %>
+                  –
+                  <%= new Date(p.end_date).toLocaleDateString('id-ID', { month: 'short', year: 'numeric' }) %>)
+                </option>
+              <% }) %>
+            </select>
+          </div>
+
+          <div class="grid gap-2">
+            <span class="text-sm font-medium">Format Dokumen</span>
+            <div class="flex gap-6 mt-1">
+              <label class="flex items-center gap-2 cursor-pointer text-sm">
+                <input type="radio" name="format" value="xlsx" checked class="accent-foreground" />
+                <span class="flex items-center gap-1.5">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="text-success"><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/><polyline points="14 2 14 8 20 8"/></svg>
+                  Excel (.xlsx)
+                </span>
+              </label>
+              <label class="flex items-center gap-2 cursor-pointer text-sm">
+                <input type="radio" name="format" value="pdf" class="accent-foreground" />
+                <span class="flex items-center gap-1.5">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="text-destructive"><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/><polyline points="14 2 14 8 20 8"/></svg>
+                  PDF / Cetak
+                </span>
+              </label>
+            </div>
+          </div>
+
+          <div class="p-4 rounded-lg text-sm bg-muted/40 border border-border/60 max-w-xl">
+            <p class="font-medium mb-2">Data yang diekspor:</p>
+            <ul class="grid gap-1.5 text-muted pl-1">
+              <li class="flex items-start gap-2"><span class="select-none">•</span><span>NIM, Nama, dan Departemen Mahasiswa</span></li>
+              <li class="flex items-start gap-2"><span class="select-none">•</span><span>Jenis dan Nominal Pengembalian UKT</span></li>
+              <li class="flex items-start gap-2"><span class="select-none">•</span><span>Catatan Admin dan Tanggal Verifikasi</span></li>
+            </ul>
+            <p class="text-xs mt-3 text-warning font-medium">
+              * Hanya mahasiswa berstatus <span class="underline">Disetujui Admin</span> yang disertakan.
+            </p>
+          </div>
+
+          <div class="pt-2">
+            <button id="btn-download" type="button" class="btn flex items-center gap-2" onclick="download()">
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                <polyline points="7 10 12 15 17 10"/><line x1="12" x2="12" y1="15" y2="3"/>
+              </svg>
+              Unduh Rekapitulasi
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="grid gap-4">
+      <div class="card">
+        <div class="flex items-center justify-between mb-3 border-b pb-3">
+          <h2 class="font-semibold text-sm">Cross-check Universitas</h2>
+          <span class="badge badge-success text-[10px] py-0.5 font-mono">JSON API</span>
+        </div>
+        <p class="text-xs text-muted leading-relaxed mb-3">
+          Gunakan endpoint internal berikut untuk melakukan sinkronisasi dengan sistem akademik pusat.
+        </p>
+
+        <div class="flex items-center justify-between gap-2 p-3 rounded-md text-xs font-mono bg-muted border border-border mb-3 overflow-hidden">
+          <div class="flex items-center gap-2 min-w-0">
+            <span class="text-success font-bold shrink-0">GET</span>
+            <code class="text-foreground truncate">/api/admin/verifikasi-tahap1</code>
+          </div>
+          <a href="/api/admin/verifikasi-tahap1" target="_blank" rel="noopener"
+            class="text-muted shrink-0 hover:text-foreground transition-colors" aria-label="Buka di tab baru">
+            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+          </a>
+        </div>
+
+        <p class="text-[11px] text-muted">
+          Params: <span class="bg-muted px-1 rounded font-mono text-xs">status, nim, from, to, limit</span>
+        </p>
+      </div>
+
+      <div class="card border-destructive/20 bg-destructive/5 p-4">
+        <h3 class="text-sm font-semibold text-destructive">Pembersihan Cache</h3>
+        <p class="text-xs text-muted mt-1 mb-4 leading-relaxed">
+          Hapus sisa berkas rekapitulasi usang di server yang sudah melewati batas kedaluwarsa.
+        </p>
+        <button id="btn-cleanup" type="button"
+          class="btn-sm btn-destructive w-full justify-center" onclick="hapusDraft()">
+          Hapus Draft Kadaluarsa
+        </button>
+        <p id="cleanup-result" class="text-xs mt-2 text-muted font-medium" hidden></p>
+      </div>
+    </div>
+
+  </div>
+
+<%- include('../partials/admin-footer') %>

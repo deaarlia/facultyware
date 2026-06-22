@@ -1,0 +1,111 @@
+<%
+  const pageTitle   = 'Daftar Permohonan';
+  const breadcrumbs = [{ label: 'Daftar Permohonan' }];
+  const pageScript  = null;
+
+  const pag = pagination;
+  const qs  = 'search=' + encodeURIComponent(search) + '&status=' + filterStatus + '&limit=' + pag.limit;
+
+  const STATUS_BADGE = {
+    0: '<span class="badge badge-warning">Menunggu</span>',
+    1: '<span class="badge badge-success">Disetujui</span>',
+    2: '<span class="badge badge-destructive">Ditolak</span>',
+    3: '<span class="badge">Butuh Revisi</span>',
+  };
+%>
+<%- include('../partials/admin-layout') %>
+
+  <div class="mb-6">
+    <h1 class="text-2xl font-bold tracking-tight">Daftar Permohonan</h1>
+    <p class="text-sm mt-1 text-muted">Total <strong><%= pag.total %></strong> permohonan ditemukan.</p>
+  </div>
+
+  <!-- Filter -->
+  <form method="GET" action="/ukt/permohonan" class="flex flex-wrap gap-2 mb-4">
+    <div class="flex-1" style="min-width:200px">
+      <input name="search" type="search" class="input w-full"
+        placeholder="Cari nama atau NIM..." value="<%= search %>" />
+    </div>
+    <select name="status" class="input w-auto">
+      <option value=""  <%= filterStatus === ''  ? 'selected' : '' %>>Semua Status</option>
+      <option value="0" <%= filterStatus === '0' ? 'selected' : '' %>>Menunggu Verifikasi</option>
+      <option value="1" <%= filterStatus === '1' ? 'selected' : '' %>>Disetujui Admin</option>
+      <option value="2" <%= filterStatus === '2' ? 'selected' : '' %>>Ditolak Admin</option>
+      <option value="3" <%= filterStatus === '3' ? 'selected' : '' %>>Butuh Revisi</option>
+    </select>
+    <input type="hidden" name="limit" value="<%= pag.limit %>" />
+    <button type="submit" class="btn">Filter</button>
+    <% if (search || filterStatus) { %>
+      <a href="/ukt/permohonan" class="btn-outline">Reset</a>
+    <% } %>
+  </form>
+
+  <div class="card p-0">
+    <% if (permohonan.length === 0) { %>
+      <div class="p-12 text-center text-muted">
+        <p class="font-medium">Tidak ada permohonan ditemukan</p>
+        <p class="text-sm mt-1">Coba ubah kata kunci atau filter pencarian.</p>
+      </div>
+    <% } else { %>
+      <div class="overflow-x-auto">
+        <table class="table w-full">
+          <thead>
+            <tr>
+              <th>NIM</th>
+              <th>Nama Mahasiswa</th>
+              <th>Jenis</th>
+              <th>Nominal</th>
+              <th>Tanggal</th>
+              <th>Status</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody>
+            <% permohonan.forEach(function(p) { %>
+              <% const tgl = p.requested_at
+                   ? new Date(p.requested_at).toLocaleDateString('id-ID', { day:'2-digit', month:'short', year:'numeric' })
+                   : '—';
+                 const nominal = p.refund_nominal
+                   ? 'Rp ' + parseInt(p.refund_nominal).toLocaleString('id-ID')
+                   : '—';
+              %>
+              <tr>
+                <td class="font-mono text-sm"><%= p.nim %></td>
+                <td class="font-medium"><%= p.nama_mahasiswa %></td>
+                <td class="text-sm"><%= p.refund_type || '—' %></td>
+                <td class="text-sm"><%= nominal %></td>
+                <td class="text-sm text-muted"><%= tgl %></td>
+                <td><%- STATUS_BADGE[p.status_code] || '<span class="badge">—</span>' %></td>
+                <td><a href="/ukt/permohonan/<%= p.id %>" class="btn-sm-outline">Detail</a></td>
+              </tr>
+            <% }) %>
+          </tbody>
+        </table>
+      </div>
+
+      <% if (pag.totalPages > 1) { %>
+        <div class="flex items-center justify-between px-4 py-3 border-t">
+          <p class="text-sm text-muted">
+            <%= (pag.page - 1) * pag.limit + 1 %>–<%= Math.min(pag.page * pag.limit, pag.total) %>
+            dari <%= pag.total %>
+          </p>
+          <div class="flex gap-1">
+            <% if (pag.page > 1) { %>
+              <a href="/ukt/permohonan?page=<%= pag.page - 1 %>&<%= qs %>" class="btn-sm-outline">‹</a>
+            <% } %>
+            <% for (let i = Math.max(1, pag.page - 2); i <= Math.min(pag.totalPages, pag.page + 2); i++) { %>
+              <a href="/ukt/permohonan?page=<%= i %>&<%= qs %>"
+                class="btn-sm-outline <%= i === pag.page ? 'bg-foreground text-background' : '' %>">
+                <%= i %>
+              </a>
+            <% } %>
+            <% if (pag.page < pag.totalPages) { %>
+              <a href="/ukt/permohonan?page=<%= pag.page + 1 %>&<%= qs %>" class="btn-sm-outline">›</a>
+            <% } %>
+          </div>
+        </div>
+      <% } %>
+    <% } %>
+  </div>
+
+<%- include('../partials/admin-footer') %>

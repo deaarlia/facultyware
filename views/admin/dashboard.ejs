@@ -1,0 +1,115 @@
+<%
+  const pageTitle   = 'Dashboard';
+  const breadcrumbs = [{ label: 'Dashboard' }];
+  const pageScript  = null;
+
+  // Safe check untuk objek stats agar tidak crash jika backend telat mengirim data
+  const safeStats = stats || { total: 0, pending: 0, approved: 0, rejected: 0 };
+
+  // Safe check untuk memastikan recent selalu berupa array
+  const safeRecent = Array.isArray(recent) ? recent : [];
+%>
+<%- include('../partials/admin-layout', { pageTitle: pageTitle, breadcrumbs: breadcrumbs }) %>
+
+  <div class="mb-6">
+    <h1 class="text-2xl font-bold tracking-tight">Dashboard</h1>
+    <p class="text-sm mt-1 text-muted">Ringkasan permohonan pengembalian UKT mahasiswa.</p>
+  </div>
+
+  <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+    <div class="card p-0">
+      <section class="p-4 flex flex-col gap-1">
+        <p class="text-xs font-medium uppercase tracking-wide text-muted">Total Permohonan</p>
+        <p class="text-3xl font-bold"><%= safeStats.total %></p>
+        <p class="text-xs text-muted">Semua periode</p>
+      </section>
+    </div>
+    <div class="card p-0">
+      <section class="p-4 flex flex-col gap-1">
+        <p class="text-xs font-medium uppercase tracking-wide text-muted">Menunggu Verifikasi</p>
+        <p class="text-3xl font-bold" style="--text-color: #f59e0b; color: var(--text-color);"><%= safeStats.pending %></p>
+        <p class="text-xs text-muted">Perlu ditindaklanjuti</p>
+      </section>
+    </div>
+    <div class="card p-0">
+      <section class="p-4 flex flex-col gap-1">
+        <p class="text-xs font-medium uppercase tracking-wide text-muted">Disetujui</p>
+        <p class="text-3xl font-bold" style="--text-color: #22c55e; color: var(--text-color);"><%= safeStats.approved %></p>
+        <p class="text-xs text-muted">Lolos verifikasi Tahap 1</p>
+      </section>
+    </div>
+    <div class="card p-0">
+      <section class="p-4 flex flex-col gap-1">
+        <p class="text-xs font-medium uppercase tracking-wide text-muted">Ditolak</p>
+        <p class="text-3xl font-bold" style="--text-color: #ef4444; color: var(--text-color);"><%= safeStats.rejected %></p>
+        <p class="text-xs text-muted">Tidak memenuhi syarat</p>
+      </section>
+    </div>
+  </div>
+
+  <div class="card p-0">
+    <header class="p-4 md:p-5 flex items-center justify-between border-b">
+      <div>
+        <h2 class="font-semibold">Permohonan Terbaru</h2>
+        <p class="text-sm text-muted">8 permohonan terakhir masuk</p>
+      </div>
+      <a href="/ukt/permohonan" class="btn-sm-outline">Lihat Semua</a>
+    </header>
+    <section class="p-0">
+      <% if (safeRecent.length === 0) { %>
+        <div class="p-8 text-center text-sm text-muted">Belum ada permohonan masuk.</div>
+      <% } else { %>
+        <div class="overflow-x-auto">
+          <table class="table w-full">
+            <thead>
+              <tr>
+                <th>No. Permohonan</th>
+                <th>Nama Mahasiswa</th>
+                <th>NIM</th>
+                <th>Nominal</th>
+                <th>Tanggal</th>
+                <th>Status</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody>
+              <% safeRecent.forEach(function(r) { %>
+                <% 
+                  // Sinkronisasi data nominal ter-parsing aman
+                  const nominal = r.refund_nominal 
+                    ? 'Rp ' + parseInt(r.refund_nominal).toLocaleString('id-ID') 
+                    : '—';
+
+                  // Sinkronisasi format tanggal
+                  const tgl = r.requested_at
+                    ? new Date(r.requested_at).toLocaleDateString('id-ID', { day:'2-digit', month:'short', year:'numeric' })
+                    : '—';
+                %>
+                <tr>
+                  <td class="font-mono text-sm">#<%= r.id %></td>
+                  <td class="font-medium"><%= r.nama_mahasiswa || r.student_name %></td>
+                  <td class="text-muted font-mono text-sm"><%= r.nim || r.regno %></td>
+                  <td class="text-sm font-medium"><%= nominal %></td>
+                  <td class="text-sm text-muted"><%= tgl %></td>
+                  <td>
+                    <% if (r.status === 0 || r.status_code === 0) { %>
+                      <span class="badge badge-warning">Menunggu</span>
+                    <% } else if (r.status === 1 || r.status_code === 1) { %>
+                      <span class="badge badge-success">Disetujui</span>
+                    <% } else if (r.status === 2 || r.status_code === 2) { %>
+                      <span class="badge badge-destructive">Ditolak</span>
+                    <% } else { %>
+                      <span class="badge">Draft</span>
+                    <% } %>
+                  </td>
+                  <td><a href="/ukt/permohonan/<%= r.id %>" class="btn-sm-outline">Detail</a></td>
+                </tr>
+              <% }) %>
+            </tbody>
+          </table>
+        </div>
+      <% } %>
+    </section>
+  </div>
+
+<%- include('../partials/admin-footer') %>
