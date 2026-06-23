@@ -1,4 +1,3 @@
-
 const mysql = require('mysql2/promise');
 const db = mysql.createPool({
   host: 'localhost',
@@ -10,106 +9,145 @@ const db = mysql.createPool({
   queueLimit: 0
 });
 
-// 1. GET: Semua permohonan masuk langsung ke WD 2 (Bypass Admin untuk Testing)
+
 const getDaftarPermohonan = async (req, res) => {
   try {
     const querySQL = `
       SELECT 
-        COALESCE(a.id, srr.id) AS id, 
         srr.id AS student_request_refund_id,
-        COALESCE(a.level, 0) AS level, -- Jika data baru/NULL otomatis diatur ke lvl 0 (Admin)
-        a.status,
-        a.approval_reason AS catatan,
         st.name AS nama,
         st.regno AS nim,
         st.department_id,
         srr.application_letter_file AS appLetter, 
         srr.ukt_payment_receipt_file AS uktReceipt,   
         srr.rector_decree_file AS rectorDecree,       
-        CASE 
-          WHEN a.level = 2 THEN 'Selesai / Disetujui Wakil Dekan 2'
-          WHEN a.level = 1 THEN 'Menunggu Validasi Wakil Dekan 2'
-          ELSE 'Menunggu Validasi Admin' -- Berlaku untuk lvl 0 atau jika data approval belum dibuat
-        END AS status_sistem
+        COALESCE(latest_app.level, 0) AS level,
+        COALESCE(latest_app.status, 1) AS approval_status,
+        latest_app.approval_reason AS catatan
       FROM student_request_refund srr
-      LEFT JOIN student_request_refund_approvals a ON srr.id = a.student_request_refund_id
       LEFT JOIN students st ON srr.student_request_id = st.id
+      LEFT JOIN (
+        SELECT ap1.*
+        FROM student_request_refund_approvals ap1
+        INNER JOIN (
+          SELECT student_request_refund_id, MAX(id) as max_id
+          FROM student_request_refund_approvals
+          GROUP BY student_request_refund_id
+        ) ap2 ON ap1.id = ap2.max_id
+      ) latest_app ON srr.id = latest_app.student_request_refund_id
       ORDER BY srr.id DESC
     `;
 
     const [rows] = await db.query(querySQL);
 
     const dataClean = rows.map(item => {
-      const namaMahasiswa = item.nama ? item.nama : "Mahasiswa Baru (Simulasi)";
-      const nimMahasiswa = item.nim ? item.nim : "NIM Belum Diatur";
-      
       let deptString = "TEKNIK KOMPUTER";
       if (item.department_id === 2) deptString = "SISTEM INFORMASI";
       if (item.department_id === 3) deptString = "INFORMATIKA";
 
+      
+      const lvl = Number(item.level || 0);
+      const appStatus = Number(item.approval_status || 0);
+
+      let statusSistem = 'Menunggu Validasi Admin';
+      
+      
+      if (lvl === 2 && appStatus === 3) {
+        statusSistem = 'Ditolak oleh Wakil Dekan 2';
+      } else if (lvl === 2 && appStatus === 2) {
+        statusSistem = 'Selesai / Disetujui Wakil Dekan 2';
+      } else if (lvl === 1) {
+        statusSistem = 'Menunggu Validasi Wakil Dekan 2';
+      }
+
       return {
-        ...item,
-        nama: namaMahasiswa,
-        nim: nimMahasiswa,
-        departemen: deptString
+        student_request_refund_id: item.student_request_refund_id,
+        nama: item.nama || "Mahasiswa Baru (Simulasi)",
+        nim: item.nim || "NIM Belum Diatur",
+        departemen: deptString,
+        appLetter: item.appLetter,
+        uktReceipt: item.uktReceipt,
+        rectorDecree: item.rectorDecree,
+        level: lvl, 
+        status_sistem: statusSistem
       };
     });
 
-    res.status(200).json({
-      success: true,
-      data: dataClean
-    });
+    res.status(200).json({ success: true, data: dataClean });
   } catch (error) {
-    console.error("[ERROR] Gagal mengambil data WD2:", error.message);
-    res.status(500).json({
-      success: false,
-      message: 'Terjadi gangguan internal pada server database.'
-    });
+    console.error(error);
+    res.status(500).json({ success: false, message: 'Internal Server Error' });
   }
 };
-// 2. POST: Aksi Keputusan Setuju / Tolak dari WD2
-// Sinkron dengan payload: body: JSON.stringify({ id_pengajuan, status_sistem, catatan })
+
+
 const updateKeputusanFinal = async (req, res) => {
-  const { id_pengajuan, status_sistem, catatan } = req.body;
+  const { id_pengajuan, status_sistem, catatan } = req.body; 
   
-  if (!id_pengajuan) {
-    return res.status(400).json({ success: false, message: 'ID Pengajuan tidak valid atau kosong' });
-  }
+  if (!id_pengajuan) return res.status(400).json({ success: false, message: 'ID Pengajuan kosong' });
 
   try {
-    // Konversi string status_sistem dari wd2.html menjadi angka status internal database kamu
-    // Sesuai logika tabel: 2 = Disetujui, 3 = Ditolak
-    let statusAngka = 1;
-    if (status_sistem.includes('Disetujui') || status_sistem.includes('Selesai')) {
-      statusAngka = 2;
-    } else if (status_sistem.includes('Ditolak') || status_sistem.includes('Tolak')) {
-      statusAngka = 3;
-    }
+    let statusAngkaApprovals = 1; 
+    let statusAngkaMasterRequest = 0; 
 
-    const queryUpdate = `
-      UPDATE student_request_refund_approvals 
-      SET status = ?, approval_reason = ?, updated_at = NOW() 
-      WHERE id = ?
-    `;
     
-    const [result] = await db.query(queryUpdate, [statusAngka, catatan || '-', id_pengajuan]);
-
-    if (result.affectedRows === 0) {
-      return res.status(404).json({ success: false, message: 'Data permohonan tidak ditemukan di database.' });
+    const stSistem = String(status_sistem).toLowerCase(); 
+    
+    if (stSistem.includes('setuju') || stSistem.includes('selesai')) {
+      statusAngkaApprovals = 2;       
+      statusAngkaMasterRequest = 1;   
+    } else if (stSistem.includes('tolak')) {
+      statusAngkaApprovals = 3;       
+      statusAngkaMasterRequest = 2;   
     }
 
-    res.status(200).json({ 
-      success: true, 
-      message: 'Keputusan Wakil Dekan 2 berhasil disimpan ke dalam database!' 
-    });
+    
+    const [[refundData]] = await db.query(
+      'SELECT student_request_id FROM student_request_refund WHERE id = ?',
+      [id_pengajuan]
+    );
+
+    if (!refundData) return res.status(404).json({ success: false, message: 'Data tidak ditemukan.' });
+
+    const masterRequestId = refundData.student_request_id;
+
+    
+    const [existingCheck] = await db.query(
+      `SELECT id FROM student_request_refund_approvals WHERE student_request_refund_id = ? AND level = 2`,
+      [id_pengajuan]
+    );
+
+    if (existingCheck.length > 0) {
+      await db.query(`
+        UPDATE student_request_refund_approvals 
+        SET status = ?, approval_reason = ?, updated_at = NOW() 
+        WHERE student_request_refund_id = ? AND level = 2
+      `, [statusAngkaApprovals, catatan || '-', id_pengajuan]);
+    } else {
+      const [rowsId] = await db.query('SELECT COALESCE(MAX(id), 0) + 1 AS nextId FROM student_request_refund_approvals');
+      const finalApprovalId = rowsId[0].nextId;
+
+      await db.query(`
+        INSERT INTO student_request_refund_approvals 
+        (id, student_request_refund_id, approved_by, approval_reason, approval_position, status, level, created_at, updated_at)
+        VALUES (?, ?, ?, ?, 'Wakil Dekan 2', ?, 2, NOW(), NOW())
+      `, [finalApprovalId, id_pengajuan, req.session?.userId || 5, catatan || '-', statusAngkaApprovals]);
+    }
+
+    
+    await db.query(
+      'UPDATE student_requests SET status = ? WHERE id = ?',
+      [statusAngkaMasterRequest, masterRequestId]
+    );
+
+    res.status(200).json({ success: true, message: 'Keputusan berhasil disimpan!' });
   } catch (error) {
-    console.error("Error database saat menyimpan keputusan:", error);
-    res.status(500).json({ success: false, message: 'Gagal memperbarui status keputusan di database.' });
+    console.error("Error update keputusan:", error);
+    res.status(500).json({ success: false, message: error.message });
   }
 };
 
-// 3. GET: Ekspor Laporan Akhir Keputusan WD2
-// Sinkron dengan: fetch(`${BACKEND_URL}/api/wd2/permohonan/ekspor`)
+
 const getLaporanEkspor = async (req, res) => {
   try {
     const querySQL = `
@@ -145,7 +183,7 @@ const getLaporanEkspor = async (req, res) => {
   }
 };
 
-// 4. GET: Endpoint tambahan jikalau dibutuhkan oleh router
+
 const getEndpointRekomendasiFinal = (req, res) => {
   res.status(200).json({
     success: true,
@@ -153,7 +191,6 @@ const getEndpointRekomendasiFinal = (req, res) => {
   });
 };
 
-// EXPORT SEMUA FUNGSI AGAR DAPAT DI-IMPORT OLEH ROUTER
 module.exports = {
   getDaftarPermohonan,
   updateKeputusanFinal,
