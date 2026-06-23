@@ -1,10 +1,10 @@
-const db = require('../../lib/db');
+const { getConnection } = require('../../lib/db');
 
 const sidebarData = (req) => ({ user: req.session.email || '-' });
 
 exports.getDashboard = async (req, res, next) => {
   try {
-  
+    const db = await getConnection();
     const [[{ total }]] = await db.query(`
       SELECT COUNT(*) as total
       FROM student_requests sr

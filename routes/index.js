@@ -1,10 +1,12 @@
 var express = require("express");
 var router = express.Router();
 const indexController = require("../controllers/indexController");
-const { isAuthenticated } = require("../middlewares/auth");
+const { isAuthenticated, hasRole } = require("../middlewares/auth");
 const wd2Router = require('./wd2Routes');
 
 router.get("/", indexController.index);
+router.get("/index", indexController.index);
+router.get("/index.ejs", indexController.index);
 
 router.get("/home", isAuthenticated, indexController.home);
 
@@ -14,9 +16,9 @@ router.post("/login", indexController.login);
 
 router.get("/logout", indexController.logout);
 
-router.get("/mahasiswa", isAuthenticated, indexController.mahasiswaPage);
+router.get("/mahasiswa", isAuthenticated, hasRole("mahasiswa"), indexController.mahasiswaPage);
 
-router.get("/wd2", isAuthenticated, indexController.wd2Page);
+router.get("/wd2", isAuthenticated, hasRole(["wd2", "wd"]), indexController.wd2Page);
 
 router.use('/api/wd2', wd2Router);
 

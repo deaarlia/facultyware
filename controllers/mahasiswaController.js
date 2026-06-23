@@ -1,4 +1,4 @@
-const db = require('../lib/db');
+const { getConnection } = require('../lib/db');
 const multer = require('multer');
 const path = require('path');
 
@@ -18,7 +18,19 @@ const storage = multer.diskStorage({
     }
 });
 
-exports.uploadFields = multer({ storage: storage }).fields([
+const upload = multer({
+    storage: storage,
+    fileFilter: function (req, file, cb) {
+        const filetypes = /pdf/;
+        const mimetype = file.mimetype === 'application/pdf';
+        const extname = filetypes.test(path.extname(file.originalname).toLowerCase());
+
+        if (mimetype && extname) {
+            return cb(null, true);
+        }
+        cb(new Error('Hanya berkas PDF (.pdf) yang diperbolehkan!'));
+    }
+}).fields([
     { name: 'application_letter_file', maxCount: 1 },
     { name: 'ukt_payment_receipt_file', maxCount: 1 },
     { name: 'rector_decree_file', maxCount: 1 }
@@ -27,6 +39,7 @@ exports.uploadFields = multer({ storage: storage }).fields([
 
 exports.ajukanPengembalian = async (req, res) => {
     try {
+        const db = await getConnection();
         const { nama, nim, departemen, whatsapp } = req.body;
 
         const appLetter = req.files && req.files['application_letter_file'] ? req.files['application_letter_file'][0].filename : null;
@@ -119,6 +132,7 @@ exports.ajukanPengembalian = async (req, res) => {
 
 exports.ubahPengajuan = async (req, res) => {
     try {
+        const db = await getConnection();
         const { id } = req.params; 
         const { nama, nim, departemen, whatsapp, student_id } = req.body;
 
@@ -182,6 +196,7 @@ exports.ubahPengajuan = async (req, res) => {
 
 exports.lihatStatusPengajuan = async (req, res) => {
     try {
+        const db = await getConnection();
         const { student_id } = req.query;
 
         

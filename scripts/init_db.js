@@ -1,8 +1,9 @@
-const db = require('../lib/db');
+const { getConnection } = require('../lib/db');
 const bcrypt = require('bcryptjs');
 
 async function init() {
   try {
+    const db = await getConnection();
     const adminEmail = 'admin@unand.ac.id';
     const plainPassword = 'password';
     

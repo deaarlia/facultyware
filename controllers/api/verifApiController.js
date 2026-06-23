@@ -1,7 +1,8 @@
-const db = require('../../lib/db');
+const { getConnection } = require('../../lib/db');
 
 exports.getVerifikasiTahap1JSON = async (req, res) => {
     try {
+        const db = await getConnection();
         const { status, nim, from, to, limit = 100, page = 1 } = req.query;
 
         const conditions = ["srr.refund_type = 'UKT'"];

@@ -1,9 +1,10 @@
-const db = require('../../lib/db');
+const { getConnection } = require('../../lib/db');
 
 const sidebarData = (req) => ({ user: req.session.email || '-' });
 
 exports.getPeriodeList = async (req, res, next) => {
     try {
+        const db = await getConnection();
         const [periodes] = await db.query(
             'SELECT * FROM ukt_refund_periods ORDER BY created_at DESC'
         );
@@ -30,6 +31,7 @@ exports.createPeriode = async (req, res) => {
     if (errors.length > 0) return res.status(400).json({ success: false, errors });
 
     try {
+        const db = await getConnection();
         const [result] = await db.query(
             'INSERT INTO ukt_refund_periods (name, start_date, end_date, is_active) VALUES (?, ?, ?, 1)',
             [name.trim(), start_date, end_date]
@@ -54,6 +56,7 @@ exports.updatePeriode = async (req, res) => {
     if (errors.length > 0) return res.status(400).json({ success: false, errors });
 
     try {
+        const db = await getConnection();
         const [result] = await db.query(
             'UPDATE ukt_refund_periods SET name = ?, start_date = ?, end_date = ? WHERE id = ?',
             [name.trim(), start_date, end_date, id]
@@ -69,6 +72,7 @@ exports.updatePeriode = async (req, res) => {
 exports.togglePeriode = async (req, res) => {
     const { id } = req.params;
     try {
+        const db = await getConnection();
         const [[periode]] = await db.query('SELECT * FROM ukt_refund_periods WHERE id = ?', [id]);
         if (!periode)
             return res.status(404).json({ success: false, message: 'Periode tidak ditemukan.' });
@@ -88,6 +92,7 @@ exports.togglePeriode = async (req, res) => {
 exports.deletePeriode = async (req, res) => {
     const { id } = req.params;
     try {
+        const db = await getConnection();
         const [result] = await db.query('DELETE FROM ukt_refund_periods WHERE id = ?', [id]);
         if (result.affectedRows === 0)
             return res.status(404).json({ success: false, message: 'Periode tidak ditemukan.' });

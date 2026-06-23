@@ -1,4 +1,4 @@
-const db = require("../lib/db");
+const { getConnection } = require("../lib/db");
 
 /**
  * ACL Middleware to check if a user has the required permission(s).
@@ -19,6 +19,8 @@ const checkPermission = (requiredPermissions) => {
     if (!req.session.userId) {
       return res.status(401).json({ message: "Unauthorized" });
     }
+
+    const db = await getConnection();
 
     const permissionsArray = Array.isArray(requiredPermissions) 
       ? requiredPermissions 

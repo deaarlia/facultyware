@@ -12,6 +12,7 @@ const db = mysql.createPool({
 
 const getDaftarPermohonan = async (req, res) => {
   try {
+    const db = await getConnection();
     const querySQL = `
       SELECT 
         srr.id AS student_request_refund_id,
@@ -150,6 +151,7 @@ const updateKeputusanFinal = async (req, res) => {
 
 const getLaporanEkspor = async (req, res) => {
   try {
+    const db = await getConnection();
     const querySQL = `
       SELECT 
         st.regno AS NIM,
