@@ -3,7 +3,8 @@ const { getConnection } = require('../lib/db');
 
 const getDaftarPermohonan = async (req, res) => {
   try {
-    
+    const db = await getConnection();
+
     const querySQL = `
       SELECT 
         srr.id AS student_request_refund_id,
@@ -17,7 +18,9 @@ const getDaftarPermohonan = async (req, res) => {
         COALESCE(latest_app.status, 1) AS approval_status,
         latest_app.approval_reason AS catatan
       FROM student_request_refund srr
-      LEFT JOIN students st ON srr.student_request_id = st.id
+      LEFT JOIN student_requests sr ON srr.student_request_id = sr.id
+      /* FIX: Gunakan requested_by sesuai struktur database-mu */
+      LEFT JOIN students st ON sr.requested_by = st.id
       LEFT JOIN (
         SELECT ap1.*
         FROM student_request_refund_approvals ap1
@@ -37,12 +40,10 @@ const getDaftarPermohonan = async (req, res) => {
       if (item.department_id === 2) deptString = "SISTEM INFORMASI";
       if (item.department_id === 3) deptString = "INFORMATIKA";
 
-      
       const lvl = Number(item.level || 0);
       const appStatus = Number(item.approval_status || 0);
 
       let statusSistem = 'Menunggu Validasi Admin';
-      
       
       if (lvl === 2 && appStatus === 3) {
         statusSistem = 'Ditolak oleh Wakil Dekan 2';
@@ -54,8 +55,8 @@ const getDaftarPermohonan = async (req, res) => {
 
       return {
         student_request_refund_id: item.student_request_refund_id,
-        nama: item.nama || "Mahasiswa Baru (Simulasi)",
-        nim: item.nim || "NIM Belum Diatur",
+        nama: item.nama || "Data Nama Tidak Ditemukan", 
+        nim: item.nim || "Data NIM Tidak Ditemukan",
         departemen: deptString,
         appLetter: item.appLetter,
         uktReceipt: item.uktReceipt,
@@ -67,11 +68,10 @@ const getDaftarPermohonan = async (req, res) => {
 
     res.status(200).json({ success: true, data: dataClean });
   } catch (error) {
-    console.error(error);
+    console.error("Error getDaftarPermohonan:", error);
     res.status(500).json({ success: false, message: 'Internal Server Error' });
   }
 };
-
 
 const updateKeputusanFinal = async (req, res) => {
   const { id_pengajuan, status_sistem, catatan } = req.body; 
@@ -161,7 +161,9 @@ const getLaporanEkspor = async (req, res) => {
         a.updated_at AS Tanggal_Keputusan
       FROM student_request_refund_approvals a
       LEFT JOIN student_request_refund srr ON a.student_request_refund_id = srr.id
-      LEFT JOIN students st ON srr.student_request_id = st.id
+      LEFT JOIN student_requests sr ON srr.student_request_id = sr.id
+      /* FIX: Gunakan requested_by di query ekspor juga */
+      LEFT JOIN students st ON sr.requested_by = st.id
       WHERE a.approval_position = 'Wakil Dekan 2' OR a.level = 2
     `;
     

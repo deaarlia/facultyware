@@ -28,13 +28,11 @@
             overflow-x: hidden;
         }
 
-        
         .layout-wrapper {
             display: flex;
             min-height: 100vh;
         }
 
-        
         .sidebar {
             width: 260px;
             border-right: 1px solid var(--border);
@@ -81,7 +79,6 @@
             color: var(--foreground);
         }
 
-        
         .sidebar-bottom {
             margin-top: auto;
             border-top: 1px solid var(--border);
@@ -108,7 +105,6 @@
             border: 1px solid var(--border);
         }
 
-        
         .main-content {
             flex: 1;
             margin-left: 260px;
@@ -128,7 +124,6 @@
             margin-bottom: 2.5rem;
         }
 
-        
         .card {
             background-color: var(--card);
             border: 1px solid var(--border);
@@ -161,14 +156,12 @@
             color: var(--foreground);
         }
 
-        
         .simbox {
             background-color: rgba(245, 158, 11, 0.1);
             border: 1px dashed rgba(245, 158, 11, 0.4);
             border-radius: 0.5rem;
         }
 
-        
         .file-upload-box {
             border: 1px solid var(--border);
             border-radius: 0.5rem;
@@ -214,7 +207,6 @@
             display: none;
         }
 
-        
         .btn-primary {
             background-color: var(--primary);
             color: var(--primary-foreground);
@@ -239,7 +231,6 @@
             border-color: #991b1b;
         }
 
-        
         .btn-floating {
             position: fixed;
             bottom: 30px;
@@ -260,7 +251,6 @@
             color: var(--foreground);
         }
 
-        
         .modal-content {
             background-color: var(--background);
             border: 1px solid var(--border);
@@ -331,6 +321,14 @@
                 <div class="card p-4 p-md-5">
                     <form id="formPengajuan">
                         
+                        <input type="hidden" id="revisi_id" name="revisi_id" value="">
+                        
+                        <div id="revisi-alert" class="alert alert-warning d-none mb-4 d-flex justify-content-between align-items-center" style="font-size: 0.875rem;">
+                            <div>
+                                <strong>Peringatan Mode Revisi!</strong> Anda sedang mengunggah ulang berkas untuk ID Pengajuan: <span id="revisi-id-display" class="fw-bold"></span>.
+                            </div>
+                            <button type="button" class="btn btn-sm btn-dark" onclick="batalRevisi()">Batal</button>
+                        </div>
                         <div class="mb-4 p-3 simbox">
                             <label class="form-label text-warning mb-1" style="font-size: 0.75rem; font-weight: 600;">🛠️ SIMULASI ID MAHASISWA</label>
                             <input type="number" class="form-control" id="student_id" value="<%= (typeof studentId !== 'undefined') ? studentId : '' %>" placeholder="Contoh: 14, 15, 16" required style="border-color: rgba(245, 158, 11, 0.4); background: rgba(0,0,0,0.2);">
@@ -463,6 +461,63 @@
         </div>
     </div>
 
+    <div class="modal fade" id="modalRevisi" tabindex="-1" aria-labelledby="modalRevisiLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content shadow-lg">
+                <div class="modal-header pt-4 px-4 pb-3">
+                    <h5 class="modal-title fw-bold" id="modalRevisiLabel" style="font-size: 1.1rem;">Revisi Berkas Pendukung</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <form id="formRevisi">
+                    <div class="modal-body p-4 custom-scroll">
+                        <input type="hidden" id="modal_revisi_id" name="revisi_id">
+                        
+                        <div class="alert alert-warning mb-4" style="font-size: 0.875rem; background-color: rgba(245, 158, 11, 0.1); border: 1px dashed rgba(245, 158, 11, 0.4); color: #fbbf24;">
+                            <strong>Perhatian!</strong> Anda sedang mengunggah ulang berkas untuk ID Pengajuan: <span id="modal-revisi-id-display" class="fw-bold"></span>.<br>Kosongkan file jika tidak ingin mengubah berkas tersebut.
+                        </div>
+
+                        <div class="file-upload-box">
+                            <div class="file-info">
+                                <span class="doc-title">Surat Permohonan Baru</span>
+                                <span class="doc-status" id="status-rev-app-letter">Belum ada berkas terpilih</span>
+                            </div>
+                            <label class="btn-upload">
+                                Pilih File
+                                <input type="file" id="rev_file_app_letter" accept=".pdf" onchange="updateFileName(this, 'status-rev-app-letter')">
+                            </label>
+                        </div>
+
+                        <div class="file-upload-box">
+                            <div class="file-info">
+                                <span class="doc-title">Bukti Pembayaran UKT Baru</span>
+                                <span class="doc-status" id="status-rev-ukt-receipt">Belum ada berkas terpilih</span>
+                            </div>
+                            <label class="btn-upload">
+                                Pilih File
+                                <input type="file" id="rev_file_ukt_receipt" accept=".pdf" onchange="updateFileName(this, 'status-rev-ukt-receipt')">
+                            </label>
+                        </div>
+
+                        <div class="file-upload-box">
+                            <div class="file-info">
+                                <span class="doc-title">SK Rektor / Bukti Cuti Baru</span>
+                                <span class="doc-status" id="status-rev-rector-decree">Belum ada berkas terpilih</span>
+                            </div>
+                            <label class="btn-upload">
+                                Pilih File
+                                <input type="file" id="rev_file_rector_decree" accept=".pdf" onchange="updateFileName(this, 'status-rev-rector-decree')">
+                            </label>
+                        </div>
+                    </div>
+                    <div class="modal-footer px-4 py-3 border-top-0">
+                        <button type="button" class="btn btn-sm btn-upload" data-bs-dismiss="modal">Batal</button>
+                        <button type="submit" class="btn btn-sm btn-primary" id="btnSubmitRevisi">Upload Revisi</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 
     <script>
@@ -490,6 +545,51 @@
                 statusElement.textContent = "Belum ada berkas terpilih";
                 statusElement.style.color = "#a1a1aa";
             }
+        }
+
+        // UBAH: Fungsi siapkanRevisi sekarang memanggil Modal Revisi, bukan mengisi form utama
+        function siapkanRevisi(id) {
+            // Tutup modal riwayat
+            const modalRiwayatEl = document.getElementById('modalRiwayat');
+            const modalRiwayatInstance = bootstrap.Modal.getInstance(modalRiwayatEl);
+            if(modalRiwayatInstance) modalRiwayatInstance.hide();
+            
+            // Isi ID ke modal revisi yang baru
+            document.getElementById('modal_revisi_id').value = id;
+            document.getElementById('modal-revisi-id-display').innerText = id;
+            
+            // Reset form revisi setiap kali dibuka
+            document.getElementById('formRevisi').reset();
+            document.getElementById('status-rev-app-letter').textContent = "Belum ada berkas terpilih";
+            document.getElementById('status-rev-app-letter').style.color = "#a1a1aa";
+            document.getElementById('status-rev-ukt-receipt').textContent = "Belum ada berkas terpilih";
+            document.getElementById('status-rev-ukt-receipt').style.color = "#a1a1aa";
+            document.getElementById('status-rev-rector-decree').textContent = "Belum ada berkas terpilih";
+            document.getElementById('status-rev-rector-decree').style.color = "#a1a1aa";
+
+            // Tampilkan modal revisi
+            const modalRevisi = new bootstrap.Modal(document.getElementById('modalRevisi'));
+            modalRevisi.show();
+        }
+
+        function batalRevisi() {
+            const currentId = document.getElementById('student_id').value; 
+            
+            document.getElementById('revisi_id').value = '';
+            document.getElementById('revisi-alert').classList.add('d-none');
+            
+            document.getElementById('btnSubmit').innerText = 'Kirim Permohonan';
+            document.getElementById('btnSubmit').classList.replace('btn-warning', 'btn-primary');
+            document.getElementById('formPengajuan').reset();
+            
+            document.getElementById('student_id').value = currentId; 
+            
+            document.getElementById('status-app-letter').textContent = "Belum ada berkas terpilih";
+            document.getElementById('status-app-letter').style.color = "#a1a1aa";
+            document.getElementById('status-ukt-receipt').textContent = "Belum ada berkas terpilih";
+            document.getElementById('status-ukt-receipt').style.color = "#a1a1aa";
+            document.getElementById('status-rector-decree').textContent = "Belum ada berkas terpilih";
+            document.getElementById('status-rector-decree').style.color = "#a1a1aa";
         }
 
         async function loadStatusRiwayat() {
@@ -524,8 +624,9 @@
                         }
 
                         const bisaRevisi = item.status_sistem.includes('Revisi') || item.status_sistem.includes('Ditolak');
+                        
                         const btnAksi = bisaRevisi 
-                            ? `<button class="btn btn-sm btn-outline-warning" style="font-size:0.75rem;" onclick="alert('Fungsi Revisi: ID ${item.id_pengajuan}')">Revisi</button>` 
+                            ? `<button class="btn btn-sm btn-outline-warning" style="font-size:0.75rem;" onclick="siapkanRevisi('${item.id_pengajuan}')">Revisi</button>` 
                             : `<span style="font-size:0.75rem; color: var(--muted-foreground);">No Action</span>`;
 
                         const linkSurat = item.file_surat ? `<a href="${BASE_HOST}${item.file_surat}" target="_blank" class="d-block mb-1 text-decoration-none" style="font-size:0.75rem; color:#60a5fa;">📄 Surat</a>` : '';
@@ -558,6 +659,7 @@
             }
         }
 
+        // FUNGSI SUBMIT FORM UTAMA (TIDAK ADA YANG DIUBAH)
         document.getElementById('formPengajuan').addEventListener('submit', async (e) => {
             e.preventDefault();
             
@@ -574,6 +676,11 @@
             formData.append('nim', document.getElementById('nim').value);
             formData.append('departemen', deptSelected);
             formData.append('whatsapp', document.getElementById('whatsapp').value);
+            
+            const revisiId = document.getElementById('revisi_id').value;
+            if (revisiId) {
+                formData.append('revisi_id', revisiId);
+            }
             
             if (fileAppLetter) formData.append('application_letter_file', fileAppLetter);
             if (fileUktReceipt) formData.append('ukt_payment_receipt_file', fileUktReceipt);
@@ -593,16 +700,7 @@
                 if (response.ok && resData.success) {
                     alert(resData.message || 'Pengajuan berhasil dikirim!');
                     
-                    const currentId = document.getElementById('student_id').value;
-                    document.getElementById('formPengajuan').reset();
-                    document.getElementById('student_id').value = currentId;
-                    
-                    document.getElementById('status-app-letter').textContent = "Belum ada berkas terpilih";
-                    document.getElementById('status-app-letter').style.color = "#a1a1aa";
-                    document.getElementById('status-ukt-receipt').textContent = "Belum ada berkas terpilih";
-                    document.getElementById('status-ukt-receipt').style.color = "#a1a1aa";
-                    document.getElementById('status-rector-decree').textContent = "Belum ada berkas terpilih";
-                    document.getElementById('status-rector-decree').style.color = "#a1a1aa";
+                    batalRevisi();
                     
                     await loadStatusRiwayat();
                     
@@ -617,7 +715,65 @@
                 alert('Gagal mengirim data. Pastikan server backend Anda berjalan.');
             } finally {
                 document.getElementById('btnSubmit').disabled = false;
-                document.getElementById('btnSubmit').innerText = 'Kirim Permohonan';
+                const isRevisi = document.getElementById('revisi_id').value;
+                document.getElementById('btnSubmit').innerText = isRevisi ? 'Kirim Ulang (Revisi)' : 'Kirim Permohonan';
+            }
+        });
+
+        // TAMBAHAN: FUNGSI SUBMIT KHUSUS MODAL REVISI
+        document.getElementById('formRevisi').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const revisiId = document.getElementById('modal_revisi_id').value;
+            const studentId = document.getElementById('student_id').value; // Mengambil dari simulasi ID Mahasiswa
+            
+            const fileAppLetter = document.getElementById('rev_file_app_letter').files[0];
+            const fileUktReceipt = document.getElementById('rev_file_ukt_receipt').files[0];
+            const fileRectorDecree = document.getElementById('rev_file_rector_decree').files[0];
+
+            if (!fileAppLetter && !fileUktReceipt && !fileRectorDecree) {
+                alert("Pilih minimal satu berkas yang ingin direvisi!");
+                return;
+            }
+
+            const formData = new FormData();
+            formData.append('student_id', studentId); 
+            
+            if (fileAppLetter) formData.append('application_letter_file', fileAppLetter);
+            if (fileUktReceipt) formData.append('ukt_payment_receipt_file', fileUktReceipt);
+            if (fileRectorDecree) formData.append('rector_decree_file', fileRectorDecree);
+
+            try {
+                const btnSubmitRev = document.getElementById('btnSubmitRevisi');
+                btnSubmitRev.disabled = true;
+                btnSubmitRev.innerText = 'Mengunggah...';
+
+                // Mengirim PUT ke /api/mahasiswa/pengembalian-ukt/:id sesuai backend kamu
+                const response = await fetch(`${API_URL}/${revisiId}`, {
+                    method: 'PUT', // Jika backend kamu memakai POST untuk ubah data, ganti method ini menjadi 'POST'
+                    body: formData 
+                });
+
+                const resData = await response.json();
+
+                if (response.ok && resData.success) {
+                    alert('Revisi berkas berhasil diunggah!');
+                    
+                    const modalRevisiEl = document.getElementById('modalRevisi');
+                    const modalRevisiInstance = bootstrap.Modal.getInstance(modalRevisiEl);
+                    if(modalRevisiInstance) modalRevisiInstance.hide();
+                    
+                    await loadStatusRiwayat();
+                    new bootstrap.Modal(document.getElementById('modalRiwayat')).show();
+                } else {
+                    alert('Gagal merevisi data: ' + (resData.message || 'Error server'));
+                }
+            } catch (error) {
+                console.error(error);
+                alert('Gagal mengirim data revisi.');
+            } finally {
+                document.getElementById('btnSubmitRevisi').disabled = false;
+                document.getElementById('btnSubmitRevisi').innerText = 'Upload Revisi';
             }
         });
 

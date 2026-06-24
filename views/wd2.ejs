@@ -31,7 +31,6 @@
             overflow: hidden;
         }
 
-        
         .sidebar {
             width: 260px;
             border-right: 1px solid var(--border);
@@ -97,7 +96,6 @@
             color: var(--foreground);
         }
 
-        
         .sidebar-footer {
             margin-top: auto;
             border-top: 1px solid var(--border);
@@ -145,19 +143,18 @@
             font-weight: 500;
             transition: all 0.2s;
             width: 100%;
+            box-sizing: border-box;
         }
 
         .btn-logout:hover {
             background-color: rgba(239, 68, 68, 0.1);
         }
 
-        
         .main-content { 
             flex: 1; 
             padding: 40px 48px; 
             overflow-y: auto; 
         }
-        
         
         .main-container { 
             width: 100%; 
@@ -169,24 +166,20 @@
         .header-title h1 { margin: 0; font-size: 26px; font-weight: 700; letter-spacing: -0.025em; color: var(--foreground); }
         .header-title p { margin: 8px 0 0 0; color: var(--muted-foreground); font-size: 14px; }
 
-        
         .stats-grid { display: flex; gap: 16px; margin-bottom: 32px; }
         .stat-card { flex: 1; background: var(--card); padding: 24px; border-radius: var(--radius); border: 1px solid var(--border); }
         .stat-card h4 { margin: 0 0 8px 0; font-size: 13px; color: var(--muted-foreground); font-weight: 500; }
         .stat-card p { margin: 0; font-size: 28px; font-weight: 700; color: var(--foreground); }
 
-        
         .card { background: var(--card); padding: 24px; border-radius: var(--radius); border: 1px solid var(--border); }
         .card-header-wrapper { display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; }
         .card-title { margin: 0; font-size: 16px; font-weight: 600; color: var(--foreground); }
 
-        
         .btn-export {
             background-color: var(--primary); color: var(--primary-foreground); border: none; padding: 10px 16px; border-radius: 6px; font-size: 13px; font-weight: 600; cursor: pointer; display: inline-flex; align-items: center; gap: 8px; transition: opacity 0.2s;
         }
         .btn-export:hover { opacity: 0.9; }
 
-        
         .btn-action-approve {
             background-color: transparent; color: #4ade80; border: 1px solid rgba(74, 222, 128, 0.3); padding: 6px 14px; border-radius: 6px; font-size: 12px; font-weight: 500; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; transition: all 0.2s;
         }
@@ -197,7 +190,6 @@
         }
         .btn-action-reject:hover { background-color: rgba(248, 113, 113, 0.1); border-color: #f87171; }
 
-        
         .modal { display: none; position: fixed; z-index: 100; left: 0; top: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); align-items: center; justify-content: center; backdrop-filter: blur(4px); }
         .modal-content { background: var(--background); padding: 24px; border-radius: var(--radius); width: 440px; border: 1px solid var(--border); }
         .form-control { width: 100%; padding: 10px; border: 1px solid var(--border); border-radius: 6px; box-sizing: border-box; font-size: 14px; margin-top: 8px; margin-bottom: 20px; font-family: inherit; background: transparent; color: var(--foreground); }
@@ -229,10 +221,11 @@
                     <p><%= (typeof email !== 'undefined' && email) ? email : 'Dashboard WD II' %></p>
                 </div>
             </div>
-            <button class="btn-logout" title="Logout" onclick="handleLogout()">
+            
+            <a href="/logout" class="btn-logout" title="Logout" style="text-decoration: none;">
                 <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
                 Log out
-            </button>
+            </a>
         </div>
     </aside>
 
@@ -327,13 +320,10 @@ async function loadAntreanWD2() {
         let approvedCount = 0;
         let rowsHTML = ''; 
         
-        
         const seenIds = new Set();
 
         resData.data.forEach(item => {
-            
             const idPengajuan = item.student_request_refund_id || item.id || "-";
-            
             
             if (idPengajuan !== "-" && seenIds.has(idPengajuan)) {
                 return; 
@@ -350,7 +340,6 @@ async function loadAntreanWD2() {
             const fileUktReceipt = item.uktReceipt;
             const fileRectorDecree = item.rectorDecree;
 
-            
             if (lvl === 1) { pendingCount++; }
             if (lvl === 2) { approvedCount++; }
             
@@ -431,7 +420,7 @@ async function loadAntreanWD2() {
 
     } catch (error) {
         console.error("Gagal memuat antrean WD2:", error);
-        document.getElementById('tbodyWD2').innerHTML = `<tr><td colspan="6" style="padding: 32px; text-align: center; color: #f87171; font-weight: 500;">Terjadi kesalahan koneksi saat mengambil data dari server.</td></tr>`;
+        document.getElementById('tbodyWD2').innerHTML = `<tr><td colspan="6" style="padding: 32px; text-align: center; color: #f87171; font-weight: 500;">Terjadi kesalahan data atau koneksi saat mengambil data dari server.</td></tr>`;
     }
 }
 
@@ -440,16 +429,18 @@ function openReviewModal(id, action) {
     document.getElementById('modalActionType').value = action;
     document.getElementById('modalCatatan').value = '';
     
+    const btnSubmit = document.getElementById('btnModalSubmit');
+    
     if(action === 'setuju') {
         document.getElementById('modalTitle').innerText = `Setujui Permohonan #${id}`;
-        document.getElementById('btnModalSubmit').style.background = "var(--primary)";
-        document.getElementById('btnModalSubmit').style.color = "var(--primary-foreground)";
-        document.getElementById('btnModalSubmit').innerText = "Setujui & Proses";
+        btnSubmit.style.background = "var(--primary)";
+        btnSubmit.style.color = "var(--primary-foreground)";
+        btnSubmit.innerText = "Setujui & Proses";
     } else {
         document.getElementById('modalTitle').innerText = `Tolak Permohonan #${id}`;
-        document.getElementById('btnModalSubmit').style.background = "#ef4444";
-        document.getElementById('btnModalSubmit').style.color = "white";
-        document.getElementById('btnModalSubmit').innerText = "Tolak Permohonan";
+        btnSubmit.style.background = "#ef4444";
+        btnSubmit.style.color = "white";
+        btnSubmit.innerText = "Tolak Permohonan";
     }
     document.getElementById('reviewModal').style.display = 'flex';
 }
@@ -459,6 +450,7 @@ function closeModal() {
 }
 
 async function submitReview() {
+    const btnSubmit = document.getElementById('btnModalSubmit');
     const id = document.getElementById('modalIdPengajuan').value;
     const action = document.getElementById('modalActionType').value;
     const catatan = document.getElementById('modalCatatan').value.trim();
@@ -469,6 +461,11 @@ async function submitReview() {
     }
 
     const statusFinal = (action === 'setuju') ? 'Disetujui' : 'Ditolak';
+
+    // Mengunci tombol agar pengguna tahu proses kirim sedang berlangsung
+    const originalText = btnSubmit.innerText;
+    btnSubmit.innerText = "Memproses...";
+    btnSubmit.disabled = true;
 
     try {
         const response = await fetch(`${BACKEND_URL}/api/wd2/pengembalian-ukt/update`, {
@@ -481,18 +478,69 @@ async function submitReview() {
             })
         });
 
-        const hasil = await response.json();
+        // Proteksi jika server mengirim error HTML halaman (bukan format JSON)
+        const contentType = response.headers.get("content-type");
+        let hasil;
+        if (contentType && contentType.includes("application/json")) {
+            hasil = await response.json();
+        } else {
+            const errorText = await response.text();
+            throw new Error("Server tidak merespons JSON. Kemungkinan rute backend crash. Pesan: " + errorText.substring(0, 100));
+        }
+
         if(hasil.success) {
             closeModal();
             loadAntreanWD2(); 
         } else {
-            alert("Gagal memperbarui status: " + hasil.message);
+            alert("Gagal memperbarui status: " + (hasil.message || "Pesan kegagalan kosong dari server."));
         }
     } catch (error) {
-        alert("Terjadi masalah jaringan server.");
+        console.error("Detail log kesalahan:", error);
+        alert("Terjadi masalah sistem: " + error.message);
+    } finally {
+        // Mengembalikan tombol ke kondisi semula
+        btnSubmit.innerText = originalText;
+        btnSubmit.disabled = false;
     }
 }
 
+function eksporLaporanAkhir() {
+    const tbody = document.getElementById('tbodyWD2');
+    
+    if (!tbody || tbody.innerText.includes('Memuat') || tbody.innerText.includes('Tidak ada antrean')) {
+        alert('Tidak ada data antrean untuk diekspor!');
+        return;
+    }
+
+    let csvContent = "ID,Nama dan NIM,Departemen,Status Sistem,Aksi/Keputusan\n";
+    const rows = tbody.querySelectorAll('tr');
+
+    rows.forEach(row => {
+        const cols = row.querySelectorAll('td');
+        if(cols.length > 0) {
+            const rowData = [];
+            cols.forEach((col, index) => {
+                if(index === 3) return; 
+                let text = col.innerText.trim().replace(/\r?\n|\r/g, " ");
+                text = `"${text.replace(/"/g, '""')}"`;
+                rowData.push(text);
+            });
+            csvContent += rowData.join(",") + "\n";
+        }
+    });
+
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    
+    const link = document.createElement("a");
+    link.setAttribute("href", url);
+    link.setAttribute("download", "Laporan_Persetujuan_UKT_WD2.csv");
+    link.style.visibility = 'hidden';
+    
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+}
 
 window.onload = loadAntreanWD2;
     </script>
