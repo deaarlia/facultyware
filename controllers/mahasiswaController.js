@@ -18,7 +18,7 @@ const storage = multer.diskStorage({
     }
 });
 
-const upload = multer({
+exports.uploadFields = multer({
     storage: storage,
     fileFilter: function (req, file, cb) {
         const filetypes = /pdf/;
