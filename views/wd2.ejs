@@ -180,6 +180,25 @@
         }
         .btn-export:hover { opacity: 0.9; }
 
+        /* Style untuk tombol JSON baru */
+        .btn-export-secondary {
+            background-color: transparent; 
+            color: var(--foreground); 
+            border: 1px solid var(--border); 
+            padding: 10px 16px; 
+            border-radius: 6px; 
+            font-size: 13px; 
+            font-weight: 600; 
+            cursor: pointer; 
+            display: inline-flex; 
+            align-items: center; 
+            gap: 8px; 
+            transition: all 0.2s;
+        }
+        .btn-export-secondary:hover { 
+            background-color: var(--muted); 
+        }
+
         .btn-action-approve {
             background-color: transparent; color: #4ade80; border: 1px solid rgba(74, 222, 128, 0.3); padding: 6px 14px; border-radius: 6px; font-size: 12px; font-weight: 500; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; transition: all 0.2s;
         }
@@ -254,10 +273,21 @@
                         <h3 class="card-title">Daftar Antrean</h3>
                         <p style="margin: 4px 0 0 0; font-size: 13px; color: var(--muted-foreground);">Daftar mahasiswa yang menunggu validasi.</p>
                     </div>
-                    <button type="button" class="btn-export" onclick="eksporLaporanAkhir()">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2-2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-                        Ekspor Laporan
-                    </button>
+                    
+                    <div style="display: flex; gap: 12px; align-items: center;">
+                        <button type="button" class="btn-export-secondary" onclick="downloadJSONRektorat()">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+                                <path d="M.5 9.9a.5.5 0 0 1 .5.5v2.5a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-2.5a.5.5 0 0 1 1 0v2.5a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2v-2.5a.5.5 0 0 1 .5-.5"/>
+                                <path d="M7.646 11.854a.5.5 0 0 0 .708 0l3-3a.5.5 0 0 0-.708-.708L8.5 10.293V1.5a.5.5 0 0 0-1 0v8.793L5.354 8.146a.5.5 0 1 0-.708.708z"/>
+                            </svg>
+                            Data SK Rektorat (JSON)
+                        </button>
+
+                        <button type="button" class="btn-export" onclick="eksporLaporanAkhir()">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2-2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                            Ekspor Laporan
+                        </button>
+                    </div>
                 </div>
                 
                 <div style="overflow-x: auto; width: 100%;">
@@ -462,7 +492,6 @@ async function submitReview() {
 
     const statusFinal = (action === 'setuju') ? 'Disetujui' : 'Ditolak';
 
-    // Mengunci tombol agar pengguna tahu proses kirim sedang berlangsung
     const originalText = btnSubmit.innerText;
     btnSubmit.innerText = "Memproses...";
     btnSubmit.disabled = true;
@@ -478,7 +507,6 @@ async function submitReview() {
             })
         });
 
-        // Proteksi jika server mengirim error HTML halaman (bukan format JSON)
         const contentType = response.headers.get("content-type");
         let hasil;
         if (contentType && contentType.includes("application/json")) {
@@ -498,7 +526,6 @@ async function submitReview() {
         console.error("Detail log kesalahan:", error);
         alert("Terjadi masalah sistem: " + error.message);
     } finally {
-        // Mengembalikan tombol ke kondisi semula
         btnSubmit.innerText = originalText;
         btnSubmit.disabled = false;
     }
@@ -540,6 +567,48 @@ function eksporLaporanAkhir() {
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
+}
+
+// FUNGSI BARU UNTUK EKSPOR JSON KE REKTORAT
+async function downloadJSONRektorat() {
+    try {
+        // Panggil endpoint backend-mu
+        // PASTIKAN ROUTE INI SESUAI DENGAN YANG ADA DI SERVERMU (misal: /api/wd2/rekomendasi-final)
+        const response = await fetch(`${BACKEND_URL}/api/wd2/rekomendasi-final`);
+        
+        if (!response.ok) {
+            throw new Error('Gagal mengambil data dari server');
+        }
+
+        const resData = await response.json();
+
+        // Cek jika datanya kosong
+        if (!resData.success || !resData.data || resData.data.length === 0) {
+            alert("Belum ada data mahasiswa yang disetujui (Selesai).");
+            return;
+        }
+
+        // Convert ke format string JSON yang rapi (indent 2 spasi)
+        const jsonString = JSON.stringify(resData, null, 2);
+        
+        // Buat file Blob
+        const blob = new Blob([jsonString], { type: "application/json" });
+        const link = document.createElement("a");
+        link.href = URL.createObjectURL(blob);
+        
+        // Atur nama file
+        const dateStr = new Date().toISOString().split('T')[0];
+        link.download = `rekomendasi_rektorat_${dateStr}.json`; 
+        
+        // Eksekusi download otomatis
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+
+    } catch (error) {
+        console.error("Error saat ekspor JSON:", error);
+        alert("Gagal mengekspor data Rektorat: " + error.message);
+    }
 }
 
 window.onload = loadAntreanWD2;

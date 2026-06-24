@@ -1,6 +1,5 @@
 const { getConnection } = require('../lib/db');
 
-
 const getDaftarPermohonan = async (req, res) => {
   try {
     const db = await getConnection();
@@ -83,7 +82,6 @@ const updateKeputusanFinal = async (req, res) => {
     let statusAngkaApprovals = 1; 
     let statusAngkaMasterRequest = 0; 
 
-    
     const stSistem = String(status_sistem).toLowerCase(); 
     
     if (stSistem.includes('setuju') || stSistem.includes('selesai')) {
@@ -94,7 +92,6 @@ const updateKeputusanFinal = async (req, res) => {
       statusAngkaMasterRequest = 2;   
     }
 
-    
     const [[refundData]] = await db.query(
       'SELECT student_request_id FROM student_request_refund WHERE id = ?',
       [id_pengajuan]
@@ -104,7 +101,6 @@ const updateKeputusanFinal = async (req, res) => {
 
     const masterRequestId = refundData.student_request_id;
 
-    
     const [existingCheck] = await db.query(
       `SELECT id FROM student_request_refund_approvals WHERE student_request_refund_id = ? AND level = 2`,
       [id_pengajuan]
@@ -127,7 +123,6 @@ const updateKeputusanFinal = async (req, res) => {
       `, [finalApprovalId, id_pengajuan, req.session?.userId || 5, catatan || '-', statusAngkaApprovals]);
     }
 
-    
     await db.query(
       'UPDATE student_requests SET status = ? WHERE id = ?',
       [statusAngkaMasterRequest, masterRequestId]
@@ -139,7 +134,6 @@ const updateKeputusanFinal = async (req, res) => {
     res.status(500).json({ success: false, message: error.message });
   }
 };
-
 
 const getLaporanEkspor = async (req, res) => {
   try {
@@ -179,12 +173,49 @@ const getLaporanEkspor = async (req, res) => {
   }
 };
 
+// --- FIX: FUNGSI INI SUDAH DIPERBARUI UNTUK SK REKTORAT ---
+const getEndpointRekomendasiFinal = async (req, res) => {
+  try {
+    const db = await getConnection();
 
-const getEndpointRekomendasiFinal = (req, res) => {
-  res.status(200).json({
-    success: true,
-    message: "Endpoint rekomendasi final aktif"
-  });
+    // Query khusus mengambil mahasiswa yang sudah disetujui di Level 2 (WD2)
+    const querySQL = `
+      SELECT 
+        srr.id AS id_pengajuan,
+        st.name AS nama,
+        st.regno AS nim,
+        CASE 
+          WHEN st.department_id = 2 THEN 'SISTEM INFORMASI'
+          WHEN st.department_id = 3 THEN 'INFORMATIKA'
+          ELSE 'TEKNIK KOMPUTER'
+        END AS departemen,
+        a.approval_position,
+        a.approval_reason AS catatan_final,
+        a.updated_at AS tanggal_disetujui
+      FROM student_request_refund_approvals a
+      JOIN student_request_refund srr ON a.student_request_refund_id = srr.id
+      JOIN student_requests sr ON srr.student_request_id = sr.id
+      JOIN students st ON sr.requested_by = st.id
+      WHERE a.level = 2 AND a.status = 2
+      ORDER BY a.updated_at DESC
+    `;
+
+    const [rows] = await db.query(querySQL);
+
+    res.status(200).json({
+      success: true,
+      message: "Data rekomendasi final penerima pengembalian UKT tingkat fakultas",
+      total_mahasiswa: rows.length,
+      generated_at: new Date().toISOString(),
+      data: rows
+    });
+  } catch (error) {
+    console.error("Error getEndpointRekomendasiFinal:", error);
+    res.status(500).json({ 
+      success: false, 
+      message: 'Gagal memuat data rekomendasi final dari database' 
+    });
+  }
 };
 
 module.exports = {
