@@ -132,12 +132,12 @@ exports.verifikasiPermohonan = async (req, res) => {
     const statusNum = Number(status_verifikasi);
 
     try {
-        const [result] = await db.query(
-            'UPDATE student_requests SET status = ? WHERE id = ?',
-            [statusNum, id]
+        const [[request]] = await db.query(
+            'SELECT status FROM student_requests WHERE id = ?',
+            [id]
         );
 
-        if (result.affectedRows === 0) {
+        if (!request) {
             return res.status(404).json({ success: false, message: 'Permohonan tidak ditemukan.' });
         }
 
@@ -148,6 +148,36 @@ exports.verifikasiPermohonan = async (req, res) => {
 
         if (!refund) {
             return res.status(404).json({ success: false, message: 'Data refund tidak ditemukan.' });
+        }
+
+        // Cek jika sudah disetujui WD2
+        const [[wd2Approval]] = await db.query(
+            `SELECT status FROM student_request_refund_approvals WHERE student_request_refund_id = ? AND level = 2`,
+            [refund.id]
+        );
+
+        if (wd2Approval && wd2Approval.status === 2) {
+            return res.status(400).json({
+                success: false,
+                message: 'Status persetujuan admin tidak dapat diubah karena permohonan sudah disetujui oleh Wakil Dekan 2.',
+            });
+        }
+
+        // Cek jika permohonan sudah ditolak, tidak bisa disetujui
+        if (statusNum === 1 && request.status === 2) {
+            return res.status(400).json({
+                success: false,
+                message: 'Permohonan yang sudah ditolak tidak dapat disetujui.',
+            });
+        }
+
+        const [result] = await db.query(
+            'UPDATE student_requests SET status = ? WHERE id = ?',
+            [statusNum, id]
+        );
+
+        if (result.affectedRows === 0) {
+            return res.status(404).json({ success: false, message: 'Permohonan tidak ditemukan.' });
         }
 
         if (statusNum === 1 && nominal) {
@@ -167,7 +197,7 @@ exports.verifikasiPermohonan = async (req, res) => {
                 `UPDATE student_request_refund_approvals
                  SET status = ?, approval_reason = ?, updated_at = NOW()
                  WHERE id = ?`,
-                [statusNum, catatan?.trim() || null, existing.id]
+                 [statusNum, catatan?.trim() || null, existing.id]
             );
         } else {
             const [[{ maxId }]] = await db.query(
@@ -195,6 +225,29 @@ exports.batalkanVerifikasi = async (req, res) => {
     const { id } = req.params;
     try {
         const db = await getConnection();
+
+        const [[refund]] = await db.query(
+            `SELECT srr.id FROM student_request_refund srr WHERE srr.student_request_id = ?`,
+            [id]
+        );
+
+        if (!refund) {
+            return res.status(404).json({ success: false, message: 'Data refund tidak ditemukan.' });
+        }
+
+        // Cek jika sudah disetujui WD2
+        const [[wd2Approval]] = await db.query(
+            `SELECT status FROM student_request_refund_approvals WHERE student_request_refund_id = ? AND level = 2`,
+            [refund.id]
+        );
+
+        if (wd2Approval && wd2Approval.status === 2) {
+            return res.status(400).json({
+                success: false,
+                message: 'Status persetujuan admin tidak dapat diubah karena permohonan sudah disetujui oleh Wakil Dekan 2.',
+            });
+        }
+
         const [result] = await db.query(
             'UPDATE student_requests SET status = 0 WHERE id = ? AND status IN (1, 2, 3)',
             [id]
@@ -207,14 +260,11 @@ exports.batalkanVerifikasi = async (req, res) => {
             });
         }
 
-        const [[refund]] = await db.query(
-            `SELECT srr.id FROM student_request_refund srr WHERE srr.student_request_id = ?`,
-            [id]
-        );
-
         if (refund) {
             await db.query(
-                'DELETE FROM student_request_refund_approvals WHERE student_request_refund_id = ? AND level = 1',
+                `UPDATE student_request_refund_approvals 
+                 SET status = 0, approval_reason = null, updated_at = NOW() 
+                 WHERE student_request_refund_id = ? AND level = 1`,
                 [refund.id]
             );
         }

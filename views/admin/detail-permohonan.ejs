@@ -7,20 +7,31 @@
   pageScript  = '/javascripts/admin/detail-permohonan.js';
   
   const statusMap = {
-    pending:  { label: 'Menunggu Verifikasi Admin', color: '#f59e0b' },
-    approved: { label: 'Disetujui Admin (Tahap 1)', color: '#22c55e' },
-    rejected: { label: 'Ditolak Admin',              color: '#ef4444' },
-    revision: { label: 'Butuh Revisi Berkas',         color: '#94a3b8' },
+    pending:        { label: 'Menunggu Verifikasi Admin', color: '#f59e0b' },
+    admin_approved: { label: 'Disetujui Admin (Tahap 1)', color: '#3b82f6' },
+    admin_rejected: { label: 'Ditolak Admin',              color: '#ef4444' },
+    revision:       { label: 'Butuh Revisi Berkas',         color: '#94a3b8' },
+    wd2_approved:   { label: 'Disetujui Wakil Dekan 2 (Selesai)', color: '#22c55e' },
+    wd2_rejected:   { label: 'Ditolak Wakil Dekan 2',        color: '#dc2626' },
   };
   
-  const statusKey = !adminApproval ? 'pending'
-    : adminApproval.status === 1   ? 'approved'
-    : adminApproval.status === 2   ? 'rejected'
-    : 'revision';
+  const safeApprovals = (Array.isArray(approvals) ? approvals : []).filter(a => a.status !== 0);
+  const wd2Approval = safeApprovals.find(a => a.level === 2) || null;
+
+  let statusKey = 'pending';
+  if (wd2Approval) {
+    statusKey = wd2Approval.status === 2 ? 'wd2_approved'
+      : wd2Approval.status === 3 ? 'wd2_rejected'
+      : 'pending';
+  } else if (adminApproval && adminApproval.status !== 0) {
+    statusKey = adminApproval.status === 1 ? 'admin_approved'
+      : adminApproval.status === 2 ? 'admin_rejected'
+      : 'revision';
+  }
+
   const si = statusMap[statusKey] || statusMap.pending;
 
   const hasWd2Acted = typeof wd2HasActed !== 'undefined' && wd2HasActed;
-  const safeApprovals = Array.isArray(approvals) ? approvals : [];
 
   const fmtDate = (d, opts) => d
     ? new Date(d).toLocaleDateString('id-ID', opts || { day: '2-digit', month: 'short', year: 'numeric' })
@@ -48,7 +59,7 @@
       </p>
     </div>
     <div class="flex gap-2 shrink-0">
-      <% if (!adminApproval) { %>
+      <% if (!adminApproval || adminApproval.status === 0) { %>
         <button class="btn btn-success" onclick="openModal('1')">Setujui</button>
         <button class="btn-outline" onclick="openModal('3')">Butuh Revisi</button>
         <button class="btn-outline btn-destructive-outline" onclick="openModal('2')">Tolak</button>
@@ -59,12 +70,15 @@
   </div>
 
   <div class="status-banner mb-5"
-    style="--status-color: <%= si.color %>; background: var(--status-color)1a; border-color: var(--status-color)4d;">
-    <div class="status-dot" style="background: var(--status-color); margin-top: 4px;"></div>
+    style="--status-color: <%= si.color %>;">
+    <div class="status-dot"></div>
     <div>
       <p class="font-semibold text-sm"><%= si.label %></p>
-      <% if (adminApproval && adminApproval.approval_reason && adminApproval.approval_reason !== '-') { %>
-        <p class="text-sm mt-0.5 text-muted">Catatan: <%= adminApproval.approval_reason %></p>
+      <% if (adminApproval && adminApproval.status !== 0 && adminApproval.approval_reason && adminApproval.approval_reason !== '-') { %>
+        <p class="text-sm mt-0.5 text-muted">Catatan Admin: <%= adminApproval.approval_reason %></p>
+      <% } %>
+      <% if (wd2Approval && wd2Approval.approval_reason && wd2Approval.approval_reason !== '-') { %>
+        <p class="text-sm mt-0.5 text-muted">Catatan WD 2: <%= wd2Approval.approval_reason %></p>
       <% } %>
       <% if (hasWd2Acted) { %>
         <p class="text-xs mt-1 text-muted">⚠ Sudah diproses WD 2 — tidak dapat dibatalkan</p>
@@ -138,14 +152,29 @@
         <% } else { %>
           <% safeApprovals.forEach(function(a) { %>
             <%
-              const dotColor = a.status === 1 ? '#22c55e' : a.status === 2 ? '#ef4444' : '#f59e0b';
-              const statusText = a.status === 1 ? 'Disetujui'
-                : a.status === 2 ? 'Ditolak'
-                : a.status === 3 ? 'Butuh Revisi'
-                : 'Diproses';
+              let dotColor = '#f59e0b';
+              let statusText = 'Diproses';
+
+              if (a.level === 1) {
+                dotColor = a.status === 1 ? '#3b82f6'
+                  : a.status === 2 ? '#ef4444'
+                  : a.status === 3 ? '#94a3b8'
+                  : '#f59e0b';
+                statusText = a.status === 1 ? 'Disetujui Admin (Tahap 1)'
+                  : a.status === 2 ? 'Ditolak Admin'
+                  : a.status === 3 ? 'Butuh Revisi Berkas'
+                  : 'Diproses';
+              } else if (a.level === 2) {
+                dotColor = a.status === 2 ? '#22c55e'
+                  : a.status === 3 ? '#dc2626'
+                  : '#f59e0b';
+                statusText = a.status === 2 ? 'Disetujui Wakil Dekan 2 (Selesai)'
+                  : a.status === 3 ? 'Ditolak Wakil Dekan 2'
+                  : 'Diproses';
+              }
             %>
             <div class="flex gap-3 py-3 border-b last:border-0">
-              <div class="status-dot" style="--dot-color: <%= dotColor %>; background: var(--dot-color);"></div>
+              <div class="status-dot" style="--status-color: <%= dotColor %>;"></div>
               <div>
                 <p class="text-sm font-medium"><%= a.approval_position || 'Admin' %></p>
                 <p class="text-xs text-muted">
@@ -164,7 +193,7 @@
   </div>
 
   <div id="modal-overlay" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="modal-title">
-    <div class="modal-box" style="max-width:440px">
+    <div class="modal-box max-w-[440px]">
       <div class="flex items-center justify-between mb-4">
         <h2 id="modal-title" class="text-lg font-semibold"></h2>
         <button type="button" onclick="closeModal()" class="btn-sm-icon-ghost size-7" aria-label="Tutup">✕</button>

@@ -78,6 +78,8 @@ a    { color: inherit; }
   align-items: flex-start;
   gap: 12px;
   margin-bottom: 20px;
+  background-color: color-mix(in srgb, var(--status-color) 10%, transparent);
+  border-color: color-mix(in srgb, var(--status-color) 30%, transparent);
 }
 .status-dot {
   width: 8px;
@@ -85,6 +87,7 @@ a    { color: inherit; }
   border-radius: 50%;
   flex-shrink: 0;
   margin-top: 5px;
+  background-color: var(--status-color);
 }
 
 .card {
