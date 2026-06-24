@@ -18,7 +18,7 @@ const storage = multer.diskStorage({
     }
 });
 
-const upload = multer({
+exports.uploadFields = multer({
     storage: storage,
     fileFilter: function (req, file, cb) {
         const filetypes = /pdf/;
@@ -35,6 +35,7 @@ const upload = multer({
     { name: 'ukt_payment_receipt_file', maxCount: 1 },
     { name: 'rector_decree_file', maxCount: 1 }
 ]);
+
 
 
 exports.ajukanPengembalian = async (req, res) => {

@@ -1,13 +1,4 @@
-const mysql = require('mysql2/promise');
-const db = mysql.createPool({
-  host: 'localhost',
-  user: 'root',          
-  password: '',          
-  database: 'facultyware', 
-  waitForConnections: true,
-  connectionLimit: 10,
-  queueLimit: 0
-});
+const { getConnection } = require('../lib/db');
 
 
 const getDaftarPermohonan = async (req, res) => {
@@ -88,6 +79,7 @@ const updateKeputusanFinal = async (req, res) => {
   if (!id_pengajuan) return res.status(400).json({ success: false, message: 'ID Pengajuan kosong' });
 
   try {
+    const db = await getConnection();
     let statusAngkaApprovals = 1; 
     let statusAngkaMasterRequest = 0; 
 
