@@ -16,7 +16,7 @@
   };
   
   const safeApprovals = (Array.isArray(approvals) ? approvals : []).filter(a => a.status !== 0);
-  const wd2Approval = safeApprovals.find(a => a.level === 2) || null;
+  const wd2Approval = safeApprovals.find(a => Number(a.level) === 2) || null;
 
   let statusKey = 'pending';
   if (wd2Approval) {
@@ -155,7 +155,7 @@
               let dotColor = '#f59e0b';
               let statusText = 'Diproses';
 
-              if (a.level === 1) {
+              if (Number(a.level) === 1) {
                 dotColor = a.status === 1 ? '#3b82f6'
                   : a.status === 2 ? '#ef4444'
                   : a.status === 3 ? '#94a3b8'
@@ -164,7 +164,7 @@
                   : a.status === 2 ? 'Ditolak Admin'
                   : a.status === 3 ? 'Butuh Revisi Berkas'
                   : 'Diproses';
-              } else if (a.level === 2) {
+              } else if (Number(a.level) === 2) {
                 dotColor = a.status === 2 ? '#22c55e'
                   : a.status === 3 ? '#dc2626'
                   : '#f59e0b';
@@ -211,7 +211,7 @@
         <label for="inp-catatan" class="text-sm font-medium">
           Catatan <span id="catatan-note" class="text-xs font-normal text-muted"></span>
         </label>
-        <textarea id="inp-catatan" class="input" rows="3" placeholder="Tuliskan catatan atau alasan..."></textarea>
+        <textarea id="inp-catatan" class="input" rows="3" placeholder="Tuliskan catatan atau alasan..." maxlength="45"></textarea>
         <p id="err-catatan" class="text-xs text-destructive" hidden></p>
       </div>
       <p id="modal-error" class="error-box mb-3" hidden></p>

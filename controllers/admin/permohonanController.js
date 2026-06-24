@@ -100,8 +100,8 @@ exports.getDetailPermohonan = async (req, res, next) => {
             [permohonan.refund_id]
         );
 
-        const adminApproval = approvals.find(a => a.level === 1) || null;
-        const wd2HasActed   = approvals.some(a => a.level === 2);
+        const adminApproval = approvals.find(a => Number(a.level) === 1) || null;
+        const wd2HasActed   = approvals.some(a => Number(a.level) === 2);
 
         res.render('admin/detail-permohonan', {
             ...sidebarData(req),
@@ -119,6 +119,13 @@ exports.getDetailPermohonan = async (req, res, next) => {
 exports.verifikasiPermohonan = async (req, res) => {
     const { id } = req.params;
     const { status_verifikasi, catatan, nominal } = req.body;
+    
+    if (catatan && catatan.length > 45) {
+        return res.status(400).json({
+            success: false,
+            message: 'Catatan tidak boleh lebih dari 45 karakter.',
+        });
+    }
     
     const db = await getConnection();
     const validStatuses = ['1', '2', '3'];
@@ -204,11 +211,38 @@ exports.verifikasiPermohonan = async (req, res) => {
                 'SELECT COALESCE(MAX(id), 0) + 1 AS maxId FROM student_request_refund_approvals'
             );
 
+            let approvedBy = null;
+            if (req.session.userId) {
+                const [[empCheck]] = await db.query(
+                    'SELECT id FROM employees WHERE id = ?',
+                    [req.session.userId]
+                );
+                if (empCheck) {
+                    approvedBy = empCheck.id;
+                }
+            }
+
+            if (!approvedBy) {
+                const [[firstEmp]] = await db.query(
+                    'SELECT id FROM employees ORDER BY id ASC LIMIT 1'
+                );
+                if (firstEmp) {
+                    approvedBy = firstEmp.id;
+                }
+            }
+
+            if (!approvedBy) {
+                return res.status(400).json({
+                    success: false,
+                    message: 'Tidak ada data pegawai (employee) yang valid di database untuk memproses verifikasi ini.'
+                });
+            }
+
             await db.query(
                 `INSERT INTO student_request_refund_approvals
                 (id, student_request_refund_id, approved_by, approval_reason, approval_position, status, level)
                 VALUES (?, ?, ?, ?, 'Admin Akademik', ?, 1)`,
-                [maxId, refund.id, req.session.userId || null, catatan?.trim() || null, statusNum]
+                [maxId, refund.id, approvedBy, catatan?.trim() || null, statusNum]
             );
         }
 

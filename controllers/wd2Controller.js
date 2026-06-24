@@ -76,6 +76,9 @@ const updateKeputusanFinal = async (req, res) => {
   const { id_pengajuan, status_sistem, catatan } = req.body; 
   
   if (!id_pengajuan) return res.status(400).json({ success: false, message: 'ID Pengajuan kosong' });
+  if (catatan && catatan.length > 45) {
+    return res.status(400).json({ success: false, message: 'Catatan tidak boleh lebih dari 45 karakter.' });
+  }
 
   try {
     const db = await getConnection();
@@ -116,11 +119,38 @@ const updateKeputusanFinal = async (req, res) => {
       const [rowsId] = await db.query('SELECT COALESCE(MAX(id), 0) + 1 AS nextId FROM student_request_refund_approvals');
       const finalApprovalId = rowsId[0].nextId;
 
+      let approvedBy = null;
+      if (req.session?.userId) {
+        const [[empCheck]] = await db.query(
+          'SELECT id FROM employees WHERE id = ?',
+          [req.session.userId]
+        );
+        if (empCheck) {
+          approvedBy = empCheck.id;
+        }
+      }
+
+      if (!approvedBy) {
+        const [[firstEmp]] = await db.query(
+          'SELECT id FROM employees ORDER BY id ASC LIMIT 1'
+        );
+        if (firstEmp) {
+          approvedBy = firstEmp.id;
+        }
+      }
+
+      if (!approvedBy) {
+        return res.status(400).json({
+          success: false,
+          message: 'Tidak ada data pegawai (employee) yang valid di database untuk memproses verifikasi ini.'
+        });
+      }
+
       await db.query(`
         INSERT INTO student_request_refund_approvals 
         (id, student_request_refund_id, approved_by, approval_reason, approval_position, status, level, created_at, updated_at)
         VALUES (?, ?, ?, ?, 'Wakil Dekan 2', ?, 2, NOW(), NOW())
-      `, [finalApprovalId, id_pengajuan, req.session?.userId || 5, catatan || '-', statusAngkaApprovals]);
+      `, [finalApprovalId, id_pengajuan, approvedBy, catatan || '-', statusAngkaApprovals]);
     }
 
     await db.query(
