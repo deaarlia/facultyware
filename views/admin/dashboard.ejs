@@ -3,10 +3,7 @@
   const breadcrumbs = [{ label: 'Dashboard' }];
   const pageScript  = null;
 
-  // Safe check untuk objek stats agar tidak crash jika backend telat mengirim data
   const safeStats = stats || { total: 0, pending: 0, approved: 0, rejected: 0 };
-
-  // Safe check untuk memastikan recent selalu berupa array
   const safeRecent = Array.isArray(recent) ? recent : [];
 %>
 <%- include('../partials/admin-layout', { pageTitle: pageTitle, breadcrumbs: breadcrumbs }) %>
@@ -17,31 +14,43 @@
   </div>
 
   <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-    <div class="card p-0">
+    <div class="card-stat p-0" style="--accent-color: var(--muted-foreground);">
       <section class="p-4 flex flex-col gap-1">
-        <p class="text-xs font-medium uppercase tracking-wide text-muted">Total Permohonan</p>
-        <p class="text-3xl font-bold"><%= safeStats.total %></p>
+        <div class="flex justify-between items-start w-full">
+          <p class="text-xs font-semibold uppercase tracking-wider text-muted">Total Permohonan</p>
+          <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-muted opacity-60" aria-hidden="true"><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/><path d="M10 9H8"/><path d="M16 13H8"/><path d="M16 17H8"/></svg>
+        </div>
+        <p class="text-3xl font-extrabold mt-1 tracking-tight"><%= safeStats.total %></p>
         <p class="text-xs text-muted">Semua periode</p>
       </section>
     </div>
-    <div class="card p-0">
+    <div class="card-stat p-0" style="--accent-color: #f59e0b;">
       <section class="p-4 flex flex-col gap-1">
-        <p class="text-xs font-medium uppercase tracking-wide text-muted">Menunggu Verifikasi</p>
-        <p class="text-3xl font-bold" style="--text-color: #f59e0b; color: var(--text-color);"><%= safeStats.pending %></p>
+        <div class="flex justify-between items-start w-full">
+          <p class="text-xs font-semibold uppercase tracking-wider text-muted">Menunggu Verifikasi</p>
+          <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="opacity-70" style="color: #f59e0b;" aria-hidden="true"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+        </div>
+        <p class="text-3xl font-extrabold mt-1 tracking-tight" style="color: #f59e0b;"><%= safeStats.pending %></p>
         <p class="text-xs text-muted">Perlu ditindaklanjuti</p>
       </section>
     </div>
-    <div class="card p-0">
+    <div class="card-stat p-0" style="--accent-color: #22c55e;">
       <section class="p-4 flex flex-col gap-1">
-        <p class="text-xs font-medium uppercase tracking-wide text-muted">Disetujui</p>
-        <p class="text-3xl font-bold" style="--text-color: #22c55e; color: var(--text-color);"><%= safeStats.approved %></p>
+        <div class="flex justify-between items-start w-full">
+          <p class="text-xs font-semibold uppercase tracking-wider text-muted">Disetujui</p>
+          <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="opacity-70" style="color: #22c55e;" aria-hidden="true"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+        </div>
+        <p class="text-3xl font-extrabold mt-1 tracking-tight" style="color: #22c55e;"><%= safeStats.approved %></p>
         <p class="text-xs text-muted">Lolos verifikasi Tahap 1</p>
       </section>
     </div>
-    <div class="card p-0">
+    <div class="card-stat p-0" style="--accent-color: #ef4444;">
       <section class="p-4 flex flex-col gap-1">
-        <p class="text-xs font-medium uppercase tracking-wide text-muted">Ditolak</p>
-        <p class="text-3xl font-bold" style="--text-color: #ef4444; color: var(--text-color);"><%= safeStats.rejected %></p>
+        <div class="flex justify-between items-start w-full">
+          <p class="text-xs font-semibold uppercase tracking-wider text-muted">Ditolak</p>
+          <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="opacity-70" style="color: #ef4444;" aria-hidden="true"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>
+        </div>
+        <p class="text-3xl font-extrabold mt-1 tracking-tight" style="color: #ef4444;"><%= safeStats.rejected %></p>
         <p class="text-xs text-muted">Tidak memenuhi syarat</p>
       </section>
     </div>
@@ -75,12 +84,10 @@
             <tbody>
               <% safeRecent.forEach(function(r) { %>
                 <% 
-                  // Sinkronisasi data nominal ter-parsing aman
                   const nominal = r.refund_nominal 
                     ? 'Rp ' + parseInt(r.refund_nominal).toLocaleString('id-ID') 
                     : '—';
 
-                  // Sinkronisasi format tanggal
                   const tgl = r.requested_at
                     ? new Date(r.requested_at).toLocaleDateString('id-ID', { day:'2-digit', month:'short', year:'numeric' })
                     : '—';

@@ -1,5 +1,7 @@
-
-body { padding: 0; font-family: inherit; }
+body {
+  padding: 0;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+}
 a    { color: inherit; }
 
 .sidebar nav a,
@@ -164,3 +166,59 @@ a    { color: inherit; }
 .badge-success { background: rgba(22, 163, 74, 0.1); color: #16a34a; }
 .badge-warning { background: rgba(245, 158, 11, 0.1); color: #f59e0b; }
 .badge-destructive { background: color-mix(in srgb, var(--destructive) 10%, transparent); color: var(--destructive); }
+
+@media (min-width: 64rem) {
+  .lg\:grid-cols-3 {
+    grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+  }
+  .lg\:grid-cols-4 {
+    grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+  }
+  .lg\:col-span-2 {
+    grid-column: span 2 / span 2 !important;
+  }
+}
+
+.card-stat {
+  position: relative;
+  overflow: hidden;
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+  background: var(--card);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.02);
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.card-stat:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 12px 20px -10px rgba(0, 0, 0, 0.08);
+  border-color: var(--muted-foreground);
+}
+.card-stat::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 4px;
+  background: var(--accent-color, var(--border));
+}
+
+.filter-form-label {
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: var(--muted-foreground);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-bottom: 0.25rem;
+  display: block;
+}
+
+.filter-select-wrapper {
+  width: 100%;
+}
+@media (min-width: 48rem) {
+  .filter-select-wrapper {
+    width: 220px !important;
+    flex-shrink: 0;
+  }
+}
